@@ -1,0 +1,213 @@
+@import './variables.css';
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+input, textarea, select {
+  user-select: text;
+  -webkit-user-select: text;
+  font-family: inherit;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* General Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: #ffffff;
+}
+.btn-primary:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #ffffff;
+  box-shadow: var(--shadow-glow-success);
+  font-weight: 600;
+  padding: 7px 18px;
+  font-size: 13px;
+}
+.btn-success:hover:not(:disabled) {
+  background: linear-gradient(135deg, #059669, #047857);
+}
+
+.btn-warning {
+  background: var(--color-warning);
+  color: #ffffff;
+}
+.btn-warning:hover:not(:disabled) {
+  background: #d97706;
+}
+
+.btn-danger {
+  background: var(--color-danger);
+  color: #ffffff;
+}
+.btn-danger:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.btn-secondary {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border-color: var(--border-subtle);
+}
+.btn-secondary:hover:not(:disabled) {
+  background: var(--bg-card);
+  border-color: var(--text-muted);
+}
+
+.btn-icon-only {
+  padding: 6px;
+  aspect-ratio: 1;
+}
+
+/* Forms */
+.form-group {
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.form-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.form-input, .form-select, .form-textarea {
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  width: 100%;
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 70px;
+  font-family: inherit;
+}
+
+/* Switch */
+.toggle-switch-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.toggle-switch-label input[type="checkbox"] {
+  accent-color: var(--color-primary);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* Range Slider */
+.slider-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.form-range {
+  flex: 1;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.slider-val-badge {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--bg-surface);
+  color: var(--color-cyan);
+  font-weight: 600;
+}

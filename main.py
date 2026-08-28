@@ -21,10 +21,14 @@ def main():
     # Create Python-JS API controller
     api = PyWebViewApi()
 
-    # Path to webview frontend
-    html_path = os.path.abspath(
+    # Path to webview frontend (prioritize Vue 3 dist build)
+    dist_html_path = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "pixelmimic", "gui", "web", "dist", "index.html")
+    )
+    fallback_html_path = os.path.abspath(
         os.path.join(os.path.dirname(__file__), "pixelmimic", "gui", "web", "index.html")
     )
+    html_path = dist_html_path if os.path.exists(dist_html_path) else fallback_html_path
 
     # Create PyWebView native window
     window = webview.create_window(

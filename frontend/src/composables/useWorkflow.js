@@ -1,0 +1,362 @@
+import { ref, computed, reactive } from 'vue'
+import { usePyWebView } from './usePyWebView'
+import { useToast } from './useToast'
+import { useExecution } from './useExecution'
+
+const workflow = reactive({
+  id: 'wf-1',
+  name: '新工作流',
+  description: '',
+  loop_count: 1,
+  loop_interval: 1.0,
+  stop_on_error: true,
+  steps: [],
+})
+
+const filePath = ref(null)
+const selectedStepIndex = ref(-1)
+
+export function useWorkflow() {
+  const { getApi, registerEventListener } = usePyWebView()
+  const { showToast } = useToast()
+  const { resetStepStatuses } = useExecution()
+
+  const selectedStep = computed(() => {
+    if (selectedStepIndex.value >= 0 && selectedStepIndex.value < workflow.steps.length) {
+      return workflow.steps[selectedStepIndex.value]
+    }
+    return null
+  })
+
+  const fileName = computed(() => {
+    if (filePath.value) {
+      return filePath.value.split(/[\\/]/).pop()
+    }
+    return '未保存'
+  })
+
+  const syncWorkflow = async () => {
+    const api = getApi()
+    if (!api) return
+    try {
+      await api.update_workflow(workflow)
+    } catch (e) {
+      console.error('Sync workflow error:', e)
+    }
+  }
+
+  const selectStep = (index) => {
+    if (index >= 0 && index < workflow.steps.length) {
+      selectedStepIndex.value = index
+    } else {
+      selectedStepIndex.value = -1
+    }
+  }
+
+  const quickAddStep = (actionType) => {
+    const defaultNames = {
+      image_click: '找图点击',
+      mouse_click: '坐标点击',
+      type_text: '输入文字',
+      hotkey: '组合快捷键',
+      wait_time: '等待延时',
+      mouse_drag: '鼠标拖拽',
+      mouse_longpress: '鼠标长按',
+      image_wait: '等待图像出现',
+    }
+
+    const newStep = {
+      id: 'step-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+      name: defaultNames[actionType] || '新步骤',
+      action_type: actionType,
+      enabled: true,
+      target_type: ['image_click', 'image_wait', 'image_drag'].includes(actionType) ? 'image' : 'coordinate',
+      x: 500,
+      y: 300,
+      offset_x: 0,
+      offset_y: 0,
+      drag_to_x: 700,
+      drag_to_y: 300,
+      drag_duration: 0.5,
+      smooth_drag: true,
+      mouse_button: 'left',
+      click_type: 'single',
+      press_duration: 1.0,
+      scroll_amount: -3,
+      text_to_type: actionType === 'type_text' ? '你好世界' : '',
+      use_clipboard: true,
+      hotkeys: actionType === 'hotkey' ? ['ctrl', 'c'] : [],
+      key_press_key: actionType === 'key_press' ? 'enter' : '',
+      image_base64: null,
+      confidence: 0.8,
+      match_method: 'TM_CCOEFF_NORMED',
+      use_grayscale: true,
+      multi_scale: false,
+      wait_timeout: 5.0,
+      wait_for_disappear: false,
+      pre_delay: actionType === 'wait_time' ? 1.0 : 0.0,
+      post_delay: 0.2,
+      retry_count: 1,
+      retry_interval: 0.5,
+      on_failure: 'stop',
+      comment: '',
+    }
+
+    workflow.steps.push(newStep)
+    selectStep(workflow.steps.length - 1)
+    syncWorkflow()
+
+    if (actionType === 'image_click' || actionType === 'image_wait') {
+      showToast('点击【截取目标图片】即可框选要识别的目标', 'info')
+    }
+  }
+
+  const updateCurrentStep = (key, value) => {
+    if (selectedStep.value) {
+      selectedStep.value[key] = value
+      syncWorkflow()
+    }
+  }
+
+  const changeStepActionType = (newType) => {
+    if (!selectedStep.value) return
+    selectedStep.value.action_type = newType
+    selectedStep.value.target_type = ['image_click', 'image_wait', 'image_drag'].includes(newType) ? 'image' : 'coordinate'
+    syncWorkflow()
+  }
+
+  const setHotkeyString = (str) => {
+    if (!selectedStep.value) return
+    const keys = str.split('+').map(k => k.trim().toLowerCase()).filter(Boolean)
+    selectedStep.value.hotkeys = keys
+    selectedStep.value.key_press_key = keys.length === 1 ? keys[0] : ''
+    syncWorkflow()
+  }
+
+  const deleteStep = (index) => {
+    workflow.steps.splice(index, 1)
+    if (selectedStepIndex.value >= workflow.steps.length) {
+      selectedStepIndex.value = workflow.steps.length - 1
+    }
+    syncWorkflow()
+  }
+
+  const duplicateStep = (index) => {
+    const orig = workflow.steps[index]
+    const clone = JSON.parse(JSON.stringify(orig))
+    clone.id = 'step-' + Date.now() + '-' + Math.floor(Math.random() * 1000)
+    clone.name = clone.name + ' (副本)'
+    workflow.steps.splice(index + 1, 0, clone)
+    selectStep(index + 1)
+    syncWorkflow()
+  }
+
+  const moveStep = (index, direction) => {
+    const newIdx = index + direction
+    if (newIdx < 0 || newIdx >= workflow.steps.length) return
+    const [moved] = workflow.steps.splice(index, 1)
+    workflow.steps.splice(newIdx, 0, moved)
+    selectStep(newIdx)
+    syncWorkflow()
+  }
+
+  const reorderSteps = (fromIndex, toIndex) => {
+    if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0) return
+    const [moved] = workflow.steps.splice(fromIndex, 1)
+    workflow.steps.splice(toIndex, 0, moved)
+    selectStep(toIndex)
+    syncWorkflow()
+  }
+
+  const clearAllSteps = () => {
+    workflow.steps = []
+    selectedStepIndex.value = -1
+    syncWorkflow()
+  }
+
+  const newWorkflow = async () => {
+    const api = getApi()
+    if (!api) return
+    try {
+      const res = await api.new_workflow()
+      if (res && res.success) {
+        Object.assign(workflow, res.workflow)
+        filePath.value = null
+        selectedStepIndex.value = -1
+        resetStepStatuses()
+        showToast('已创建新工作流', 'info')
+      }
+    } catch (e) {
+      showToast('创建失败: ' + e, 'error')
+    }
+  }
+
+  const openWorkflow = async () => {
+    const api = getApi()
+    if (!api) return
+    try {
+      const res = await api.open_workflow()
+      if (res && res.success) {
+        Object.assign(workflow, res.workflow)
+        filePath.value = res.filePath
+        selectedStepIndex.value = workflow.steps.length > 0 ? 0 : -1
+        resetStepStatuses()
+        showToast(`成功打开工作流: ${res.fileName}`, 'success')
+      } else if (res && res.message) {
+        showToast(res.message, 'error')
+      }
+    } catch (e) {
+      showToast('打开文件异常: ' + e, 'error')
+    }
+  }
+
+  const saveWorkflow = async () => {
+    const api = getApi()
+    if (!api) return
+    try {
+      const res = await api.save_workflow(workflow, filePath.value)
+      if (res && res.success) {
+        filePath.value = res.filePath
+        showToast(`成功保存至: ${res.fileName}`, 'success')
+      } else if (res && res.message) {
+        showToast(res.message, 'error')
+      }
+    } catch (e) {
+      showToast('保存文件异常: ' + e, 'error')
+    }
+  }
+
+  const loadSampleTemplate = async () => {
+    const api = getApi()
+    if (!api) return
+    try {
+      const res = await api.load_sample_template('basic')
+      if (res && res.success) {
+        Object.assign(workflow, res.workflow)
+        filePath.value = null
+        selectedStepIndex.value = 0
+        resetStepStatuses()
+        showToast('已载入新手示例工作流，点击【启动运行】即可体验！', 'success')
+      }
+    } catch (e) {
+      showToast('载入示例失败: ' + e, 'error')
+    }
+  }
+
+  const startSnipForCurrentStep = async () => {
+    const api = getApi()
+    if (!api) return
+    try {
+      showToast('全屏截屏已启动：鼠标框选目标，按 Enter 确认，Esc 取消', 'info')
+      await api.start_snip()
+    } catch (e) {
+      showToast('截屏调起失败: ' + e, 'error')
+    }
+  }
+
+  const testMatchForCurrentStep = async () => {
+    const api = getApi()
+    if (!api || !selectedStep.value) return
+    try {
+      const res = await api.test_match(selectedStep.value)
+      if (res.found) {
+        showToast(res.message, 'success')
+      } else {
+        showToast(res.message, 'warning')
+      }
+    } catch (e) {
+      showToast('匹配测试发生异常: ' + e, 'error')
+    }
+  }
+
+  const pickMousePosForCurrentStep = async () => {
+    const api = getApi()
+    if (!api || !selectedStep.value) return
+    try {
+      const res = await api.pick_mouse_position()
+      if (res && res.success) {
+        selectedStep.value.x = res.x
+        selectedStep.value.y = res.y
+        showToast(`已拾取当前鼠标坐标: (${res.x}, ${res.y})`, 'success')
+        syncWorkflow()
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const pickDragEndPos = async () => {
+    const api = getApi()
+    if (!api || !selectedStep.value) return
+    try {
+      const res = await api.pick_mouse_position()
+      if (res && res.success) {
+        selectedStep.value.drag_to_x = res.x
+        selectedStep.value.drag_to_y = res.y
+        showToast(`已拾取终点坐标: (${res.x}, ${res.y})`, 'success')
+        syncWorkflow()
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const testSingleStep = async (index) => {
+    const api = getApi()
+    if (!api || index < 0 || index >= workflow.steps.length) return
+    const step = workflow.steps[index]
+    try {
+      showToast(`开始测试单步: [${step.name}]`, 'info')
+      const res = await api.test_single_step(step, index)
+      if (res.success) {
+        showToast(`单步测试成功: ${res.message || '完成'} (${res.executionTime}s)`, 'success')
+      } else {
+        showToast(`单步测试失败: ${res.message || '未成功'}`, 'error')
+      }
+    } catch (e) {
+      showToast('测试执行异常: ' + e, 'error')
+    }
+  }
+
+  // Register backend snip callback
+  const initWorkflowListeners = () => {
+    registerEventListener('snip_captured', (data) => {
+      if (selectedStep.value) {
+        selectedStep.value.image_base64 = data.image_base64
+        selectedStep.value.x = data.x
+        selectedStep.value.y = data.y
+        showToast(`截图已应用: (${data.x}, ${data.y}) 尺寸: ${data.width}x${data.height}`, 'success')
+        syncWorkflow()
+      }
+    })
+  }
+
+  return {
+    workflow,
+    filePath,
+    fileName,
+    selectedStepIndex,
+    selectedStep,
+    selectStep,
+    quickAddStep,
+    updateCurrentStep,
+    changeStepActionType,
+    setHotkeyString,
+    deleteStep,
+    duplicateStep,
+    moveStep,
+    reorderSteps,
+    clearAllSteps,
+    newWorkflow,
+    openWorkflow,
+    saveWorkflow,
+    loadSampleTemplate,
+    startSnipForCurrentStep,
+    testMatchForCurrentStep,
+    pickMousePosForCurrentStep,
+    pickDragEndPos,
+    testSingleStep,
+    syncWorkflow,
+    initWorkflowListeners,
+  }
+}

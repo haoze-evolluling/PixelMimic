@@ -1,0 +1,39 @@
+/* PixelMimic Modern Dark Theme CSS Variables */
+
+:root {
+  --bg-app: #0b0f19;
+  --bg-header: #111827;
+  --bg-surface: #162032;
+  --bg-card: #1e293b;
+  --bg-card-hover: #27354f;
+  --bg-card-selected: #243556;
+  --bg-input: #0f172a;
+  --bg-subtle: rgba(255, 255, 255, 0.04);
+  
+  --border-subtle: #2d3b55;
+  --border-card: #334155;
+  --border-focus: #3b82f6;
+  --border-active: #60a5fa;
+
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  
+  --color-primary: #3b82f6;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-purple: #8b5cf6;
+  --color-cyan: #06b6d4;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 16px rgba(59, 130, 246, 0.3);
+  --shadow-glow-success: 0 0 18px rgba(16, 185, 129, 0.35);
+}

@@ -401,7 +401,7 @@ class PyWebViewApi:
 
     def load_sample_template(self, template_type: str = "basic") -> Dict[str, Any]:
         """Generate beginner-friendly example workflow."""
-        wf = Workflow(name="🌟 新手自动化示例流程", description="演示找图点击、文字输入与延时等待")
+        wf = Workflow(name="新手自动化示例流程", description="演示找图点击、文字输入与延时等待")
         
         s1 = StepNode(
             name="等待应用就绪",
