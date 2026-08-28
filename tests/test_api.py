@@ -55,6 +55,11 @@ class TestPyWebViewApi(unittest.TestCase):
         self.assertEqual(self.api._settings["loop_count"], 5)
         self.assertFalse(self.api._settings["minimize_on_run"])
 
+        # Test infinite loop (loop_count: 0)
+        res_zero = self.api.save_settings({"loop_count": 0})
+        self.assertTrue(res_zero["success"])
+        self.assertEqual(self.api._settings["loop_count"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()

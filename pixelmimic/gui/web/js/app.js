@@ -1137,8 +1137,8 @@ class PixelMimicController {
     const m = document.getElementById(modalId);
     if (m) m.classList.add("active");
     if (modalId === "settingsModal") {
-      document.getElementById("settingLoopCount").value = this.settings.loop_count || 1;
-      document.getElementById("settingLoopInterval").value = this.settings.loop_interval || 1.0;
+      document.getElementById("settingLoopCount").value = this.settings.loop_count !== undefined && this.settings.loop_count !== null ? this.settings.loop_count : 1;
+      document.getElementById("settingLoopInterval").value = this.settings.loop_interval !== undefined && this.settings.loop_interval !== null ? this.settings.loop_interval : 1.0;
       document.getElementById("settingMinimizeOnRun").checked = this.settings.minimize_on_run !== false;
       document.getElementById("settingFailsafe").checked = this.settings.failsafe !== false;
     }
@@ -1150,8 +1150,10 @@ class PixelMimicController {
   }
 
   async saveGlobalSettings() {
-    this.settings.loop_count = parseInt(document.getElementById("settingLoopCount").value) || 1;
-    this.settings.loop_interval = parseFloat(document.getElementById("settingLoopInterval").value) || 1.0;
+    const parsedLoop = parseInt(document.getElementById("settingLoopCount").value);
+    const parsedInterval = parseFloat(document.getElementById("settingLoopInterval").value);
+    this.settings.loop_count = isNaN(parsedLoop) ? 1 : Math.max(0, parsedLoop);
+    this.settings.loop_interval = isNaN(parsedInterval) ? 1.0 : Math.max(0, parsedInterval);
     this.settings.minimize_on_run = document.getElementById("settingMinimizeOnRun").checked;
     this.settings.failsafe = document.getElementById("settingFailsafe").checked;
 

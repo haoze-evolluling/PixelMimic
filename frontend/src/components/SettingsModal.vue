@@ -27,8 +27,8 @@ watch(
   () => props.isOpen,
   (open) => {
     if (open) {
-      form.loop_count = settings.value.loop_count || 1
-      form.loop_interval = settings.value.loop_interval || 1.0
+      form.loop_count = settings.value.loop_count ?? 1
+      form.loop_interval = settings.value.loop_interval ?? 1.0
       form.minimize_on_run = settings.value.minimize_on_run !== false
       form.failsafe = settings.value.failsafe !== false
     }
@@ -36,9 +36,11 @@ watch(
 )
 
 const handleSave = async () => {
+  const parsedLoop = parseInt(form.loop_count)
+  const parsedInterval = parseFloat(form.loop_interval)
   setSettings({
-    loop_count: parseInt(form.loop_count) || 1,
-    loop_interval: parseFloat(form.loop_interval) || 1.0,
+    loop_count: isNaN(parsedLoop) ? 1 : Math.max(0, parsedLoop),
+    loop_interval: isNaN(parsedInterval) ? 1.0 : Math.max(0, parsedInterval),
     minimize_on_run: form.minimize_on_run,
     failsafe: form.failsafe,
   })
