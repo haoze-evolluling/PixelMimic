@@ -64,7 +64,7 @@ watch(
 
 <style scoped>
 .bottom-console-container {
-  height: 160px;
+  height: 120px;
   background: var(--bg-app);
   border-top: 1px solid var(--border-subtle);
   display: flex;
@@ -73,29 +73,29 @@ watch(
 }
 
 .console-header {
-  height: 32px;
+  height: 28px;
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 14px;
+  padding: 0 12px;
 }
 
 .console-tabs {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .console-tab {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12px;
+  gap: 5px;
+  font-size: 11.5px;
   font-weight: 600;
   color: var(--text-primary);
-  padding: 4px 8px;
+  padding: 2px 6px;
 }
 
 .tab-icon {
@@ -103,9 +103,9 @@ watch(
 }
 
 .log-count {
-  font-size: 10px;
+  font-size: 9.5px;
   background: var(--bg-card);
-  padding: 1px 5px;
+  padding: 1px 4px;
   border-radius: 8px;
   color: var(--text-muted);
 }
@@ -113,53 +113,53 @@ watch(
 .console-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .log-scroll-toggle {
-  font-size: 11px;
+  font-size: 10.5px;
   color: var(--text-muted);
 }
 
 .btn-clear {
-  font-size: 11px;
-  padding: 2px 8px;
+  font-size: 10.5px;
+  padding: 2px 6px;
 }
 
 .log-scroll-area {
   flex: 1;
   overflow-y: auto;
-  padding: 8px 14px;
+  padding: 6px 12px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: 12px;
-  line-height: 1.6;
+  font-size: 11.5px;
+  line-height: 1.5;
 }
 
 .log-empty {
   color: var(--text-muted);
   font-style: italic;
   font-size: 11px;
-  padding: 8px 0;
+  padding: 4px 0;
 }
 
 .log-entry {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  gap: 6px;
   margin-bottom: 2px;
   word-break: break-all;
 }
 
 .log-time {
   color: var(--text-muted);
-  font-size: 11px;
+  font-size: 10.5px;
   flex-shrink: 0;
 }
 
 .log-badge {
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 700;
-  padding: 1px 5px;
+  padding: 0 4px;
   border-radius: 3px;
   text-transform: uppercase;
   flex-shrink: 0;

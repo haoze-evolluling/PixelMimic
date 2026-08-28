@@ -101,7 +101,7 @@ const isDisabled = computed(() => props.step.enabled === false)
   >
     <!-- Drag Handle -->
     <div class="step-drag-handle" title="按住拖拽调整顺序">
-      <GripVertical :size="14" />
+      <GripVertical :size="13" />
     </div>
 
     <!-- Step Index Badge -->
@@ -111,7 +111,7 @@ const isDisabled = computed(() => props.step.enabled === false)
 
     <!-- Step Icon Badge -->
     <div class="step-icon-badge">
-      <component :is="actionIcon" :size="16" />
+      <component :is="actionIcon" :size="14" />
     </div>
 
     <!-- Step Main Content -->
@@ -119,9 +119,9 @@ const isDisabled = computed(() => props.step.enabled === false)
       <div class="step-title-row">
         <span class="step-name">{{ step.name || '未命名步骤' }}</span>
         <span v-if="isDisabled" class="step-disabled-tag">已禁用</span>
-        <Loader2 v-if="isRunning" :size="14" class="status-icon-running" />
-        <CheckCircle2 v-else-if="isSuccess" :size="14" class="status-icon-success" />
-        <AlertCircle v-else-if="isError" :size="14" class="status-icon-error" />
+        <Loader2 v-if="isRunning" :size="13" class="status-icon-running" />
+        <CheckCircle2 v-else-if="isSuccess" :size="13" class="status-icon-success" />
+        <AlertCircle v-else-if="isError" :size="13" class="status-icon-error" />
       </div>
 
       <!-- Natural Language Description -->
@@ -150,7 +150,7 @@ const isDisabled = computed(() => props.step.enabled === false)
         title="单步即时测试"
         @click="emit('test', index)"
       >
-        <Play :size="13" />
+        <Play :size="12" />
       </button>
 
       <button
@@ -158,7 +158,7 @@ const isDisabled = computed(() => props.step.enabled === false)
         title="复制副本"
         @click="emit('duplicate', index)"
       >
-        <Copy :size="13" />
+        <Copy :size="12" />
       </button>
 
       <button
@@ -166,7 +166,7 @@ const isDisabled = computed(() => props.step.enabled === false)
         title="上移"
         @click="emit('move-up', index)"
       >
-        <ChevronUp :size="13" />
+        <ChevronUp :size="12" />
       </button>
 
       <button
@@ -174,7 +174,7 @@ const isDisabled = computed(() => props.step.enabled === false)
         title="下移"
         @click="emit('move-down', index)"
       >
-        <ChevronDown :size="13" />
+        <ChevronDown :size="12" />
       </button>
 
       <button
@@ -182,7 +182,7 @@ const isDisabled = computed(() => props.step.enabled === false)
         title="删除步骤"
         @click="emit('delete', index)"
       >
-        <Trash2 :size="13" />
+        <Trash2 :size="12" />
       </button>
     </div>
   </div>
@@ -192,11 +192,11 @@ const isDisabled = computed(() => props.step.enabled === false)
 .step-card {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   background: var(--bg-card);
   border: 1px solid var(--border-card);
-  padding: 10px 14px;
-  border-radius: var(--radius-md);
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.15s ease;
   position: relative;
@@ -242,17 +242,17 @@ const isDisabled = computed(() => props.step.enabled === false)
 }
 
 .step-index-badge {
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 700;
   color: var(--text-muted);
-  width: 20px;
+  width: 18px;
   text-align: center;
   font-variant-numeric: tabular-nums;
 }
 
 .step-icon-badge {
-  width: 32px;
-  height: 32px;
+  width: 26px;
+  height: 26px;
   background: var(--bg-surface);
   border-radius: var(--radius-sm);
   display: flex;
@@ -268,17 +268,17 @@ const isDisabled = computed(() => props.step.enabled === false)
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
 }
 
 .step-title-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .step-name {
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
   color: var(--text-primary);
   overflow: hidden;
@@ -287,10 +287,10 @@ const isDisabled = computed(() => props.step.enabled === false)
 }
 
 .step-disabled-tag {
-  font-size: 10px;
+  font-size: 9.5px;
   color: var(--text-muted);
   background: var(--bg-surface);
-  padding: 1px 5px;
+  padding: 1px 4px;
   border-radius: 3px;
 }
 
@@ -308,12 +308,12 @@ const isDisabled = computed(() => props.step.enabled === false)
 }
 
 .step-natural-desc {
-  font-size: 12px;
+  font-size: 11.5px;
   color: var(--text-secondary);
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 3px;
 }
 
 .desc-highlight {
@@ -322,8 +322,8 @@ const isDisabled = computed(() => props.step.enabled === false)
 }
 
 .step-thumb-mini {
-  height: 18px;
-  max-width: 48px;
+  height: 16px;
+  max-width: 42px;
   object-fit: contain;
   border-radius: 2px;
   border: 1px solid var(--border-subtle);
@@ -338,7 +338,7 @@ const isDisabled = computed(() => props.step.enabled === false)
 .step-actions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   opacity: 0.85;
 }
 
@@ -347,8 +347,8 @@ const isDisabled = computed(() => props.step.enabled === false)
 }
 
 .step-action-btn {
-  width: 26px;
-  height: 26px;
+  width: 23px;
+  height: 23px;
   border-radius: var(--radius-sm);
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);

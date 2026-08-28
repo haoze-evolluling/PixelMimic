@@ -58,7 +58,7 @@ const handleClearSteps = () => {
     <!-- Panel Header -->
     <div class="panel-header">
       <div class="panel-title">
-        <ListTree :size="16" class="panel-title-icon" />
+        <ListTree :size="15" class="panel-title-icon" />
         <span>自动化步骤流</span>
         <span class="panel-badge">{{ workflow.steps.length }} 步</span>
       </div>
@@ -70,7 +70,7 @@ const handleClearSteps = () => {
           title="清空全部步骤"
           @click="handleClearSteps"
         >
-          <Trash2 :size="13" />
+          <Trash2 :size="12" />
         </button>
       </div>
     </div>
@@ -80,7 +80,7 @@ const handleClearSteps = () => {
       <!-- Empty State / Onboarding Guide -->
       <div v-if="workflow.steps.length === 0" class="empty-state">
         <div class="empty-icon-wrap">
-          <Sparkles :size="36" class="empty-icon-svg" />
+          <Sparkles :size="30" class="empty-icon-svg" />
         </div>
         <div class="empty-title">欢迎使用 PixelMimic 自动化大师</div>
         <div class="empty-desc">
@@ -90,7 +90,7 @@ const handleClearSteps = () => {
         <div class="onboarding-guide-box">
           <div class="guide-step">
             <div class="guide-num-badge">
-              <MousePointerClick :size="14" />
+              <MousePointerClick :size="13" />
             </div>
             <div class="guide-text">
               点击上方 <b>【找图点击】</b> 或 <b>【坐标点击】</b>
@@ -98,7 +98,7 @@ const handleClearSteps = () => {
           </div>
           <div class="guide-step">
             <div class="guide-num-badge">
-              <Crop :size="14" />
+              <Crop :size="13" />
             </div>
             <div class="guide-text">
               按 <b>F7</b> 框选您想自动识别点击的目标图标或按钮
@@ -106,16 +106,16 @@ const handleClearSteps = () => {
           </div>
           <div class="guide-step">
             <div class="guide-num-badge">
-              <PlayCircle :size="14" />
+              <PlayCircle :size="13" />
             </div>
             <div class="guide-text">
-              点击右上角 <b>【启动运行】(F8)</b> 即可全自动执行
+              点击右上角 <b>【运行】(F8)</b> 即可全自动执行
             </div>
           </div>
         </div>
 
         <button class="btn btn-primary btn-sample" @click="loadSampleTemplate">
-          <Sparkles :size="15" />
+          <Sparkles :size="14" />
           <span>载入新手示例流程体验</span>
         </button>
       </div>
@@ -151,13 +151,13 @@ const handleClearSteps = () => {
   border-right: 1px solid var(--border-subtle);
   display: flex;
   flex-direction: column;
-  min-width: 320px;
+  min-width: 280px;
   overflow: hidden;
 }
 
 .panel-header {
-  height: 42px;
-  padding: 0 14px;
+  height: 36px;
+  padding: 0 12px;
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border-subtle);
   display: flex;
@@ -169,8 +169,8 @@ const handleClearSteps = () => {
 .panel-title {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 13px;
+  gap: 6px;
+  font-size: 12.5px;
   font-weight: 600;
   color: var(--text-primary);
 }
@@ -181,9 +181,9 @@ const handleClearSteps = () => {
 
 .panel-badge {
   background: var(--bg-card);
-  padding: 2px 7px;
-  border-radius: 12px;
-  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 10.5px;
   color: var(--text-muted);
   font-weight: 500;
   border: 1px solid var(--border-subtle);
@@ -192,19 +192,19 @@ const handleClearSteps = () => {
 .panel-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 .steps-scroll-container {
   flex: 1;
   overflow-y: auto;
-  padding: 14px;
+  padding: 10px;
 }
 
 .step-cards-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 /* Empty State & Onboarding */
@@ -213,20 +213,20 @@ const handleClearSteps = () => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 32px 20px;
+  padding: 24px 16px;
   text-align: center;
   color: var(--text-secondary);
 }
 
 .empty-icon-wrap {
-  width: 60px;
-  height: 60px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
   background: var(--bg-card);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   border: 1px solid var(--border-card);
 }
 
@@ -235,17 +235,17 @@ const handleClearSteps = () => {
 }
 
 .empty-title {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .empty-desc {
-  font-size: 12px;
-  line-height: 1.6;
-  max-width: 380px;
-  margin-bottom: 20px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  max-width: 340px;
+  margin-bottom: 16px;
   color: var(--text-muted);
 }
 
@@ -253,27 +253,27 @@ const handleClearSteps = () => {
   background: var(--bg-card);
   border: 1px solid var(--border-card);
   border-radius: var(--radius-md);
-  padding: 14px 16px;
+  padding: 12px 14px;
   width: 100%;
-  max-width: 380px;
-  margin-bottom: 24px;
+  max-width: 340px;
+  margin-bottom: 18px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   text-align: left;
 }
 
 .guide-step {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 12px;
+  gap: 10px;
+  font-size: 11.5px;
   color: var(--text-secondary);
 }
 
 .guide-num-badge {
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   background: var(--bg-surface);
   color: var(--color-primary);
@@ -289,7 +289,7 @@ const handleClearSteps = () => {
 }
 
 .btn-sample {
-  padding: 9px 20px;
-  font-size: 13px;
+  padding: 7px 16px;
+  font-size: 12px;
 }
 </style>

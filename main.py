@@ -35,9 +35,9 @@ def main():
         title="PixelMimic - 桌面可视化自动化大师",
         url=html_path,
         js_api=api,
-        width=1280,
-        height=850,
-        min_size=(960, 640),
+        width=1040,
+        height=680,
+        min_size=(800, 520),
         background_color="#0b0f19",
     )
     api.set_window(window)

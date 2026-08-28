@@ -29,7 +29,7 @@ const actions = [
 <template>
   <div class="action-palette-bar">
     <div class="palette-label">
-      <PlusCircle :size="14" class="label-icon" />
+      <PlusCircle :size="13" class="label-icon" />
       <span>常用操作:</span>
     </div>
 
@@ -40,7 +40,7 @@ const actions = [
         class="palette-item-btn"
         @click="quickAddStep(item.type)"
       >
-        <component :is="item.icon" :size="14" class="item-icon" />
+        <component :is="item.icon" :size="13" class="item-icon" />
         <span>{{ item.label }}</span>
       </button>
     </div>
@@ -51,10 +51,10 @@ const actions = [
 .action-palette-bar {
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border-subtle);
-  padding: 6px 16px;
+  padding: 5px 12px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   flex-shrink: 0;
   overflow-x: auto;
 }
@@ -62,8 +62,8 @@ const actions = [
 .palette-label {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12px;
+  gap: 5px;
+  font-size: 11.5px;
   font-weight: 600;
   color: var(--text-secondary);
   white-space: nowrap;
@@ -76,19 +76,19 @@ const actions = [
 .palette-buttons {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .palette-item-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   background: var(--bg-card);
   border: 1px solid var(--border-card);
   color: var(--text-primary);
-  padding: 5px 10px;
+  padding: 3px 8px;
   border-radius: var(--radius-sm);
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 500;
   cursor: pointer;
   white-space: nowrap;

@@ -103,7 +103,7 @@ const commonHotkeys = [
     <!-- Panel Header -->
     <div class="panel-header">
       <div class="panel-title">
-        <SlidersHorizontal :size="16" class="panel-title-icon" />
+        <SlidersHorizontal :size="15" class="panel-title-icon" />
         <span>步骤属性配置</span>
         <span class="panel-badge">
           {{ selectedStep ? `步骤 #${selectedStepIndex + 1}` : '未选中' }}
@@ -115,7 +115,7 @@ const commonHotkeys = [
     <div class="inspector-body">
       <!-- Empty Selection State -->
       <div v-if="!selectedStep" class="inspector-empty">
-        <ArrowRight :size="28" class="empty-guide-icon" />
+        <ArrowRight :size="24" class="empty-guide-icon" />
         <span>请在左侧选择或添加一个操作步骤以配置属性</span>
       </div>
 
@@ -124,7 +124,7 @@ const commonHotkeys = [
         <!-- 1. Basic Info Section -->
         <div class="prop-section-card">
           <div class="section-title">
-            <Pin :size="14" class="section-icon" />
+            <Pin :size="13" class="section-icon" />
             <span>步骤基础信息</span>
           </div>
 
@@ -174,7 +174,7 @@ const commonHotkeys = [
         <!-- 2. Image Configuration Section -->
         <div v-if="isImageAction" class="prop-section-card">
           <div class="section-title">
-            <Crosshair :size="14" class="section-icon" />
+            <Crosshair :size="13" class="section-icon" />
             <span>目标图像配置</span>
           </div>
 
@@ -186,7 +186,7 @@ const commonHotkeys = [
               alt="目标图片"
             />
             <div v-else class="target-img-placeholder">
-              <ImageIcon :size="24" class="placeholder-icon" />
+              <ImageIcon :size="20" class="placeholder-icon" />
               <span>尚未设置目标图片</span>
               <span class="subtext">点击下方按钮截屏或选择图片</span>
             </div>
@@ -194,15 +194,15 @@ const commonHotkeys = [
 
           <div class="image-buttons-row">
             <button class="btn btn-primary btn-snip" @click="startSnipForCurrentStep">
-              <Scissors :size="14" />
-              <span>截取目标图片 (F7)</span>
+              <Scissors :size="13" />
+              <span>截取目标 (F7)</span>
             </button>
             <button
               class="btn btn-secondary btn-test-match"
               :disabled="!selectedStep.image_base64"
               @click="testMatchForCurrentStep"
             >
-              <Search :size="14" />
+              <Search :size="13" />
               <span>测试匹配</span>
             </button>
           </div>
@@ -230,7 +230,7 @@ const commonHotkeys = [
 
           <div v-if="selectedStep.action_type === 'image_wait'" class="form-row">
             <div class="form-group">
-              <label class="form-label">最长等待超时 (秒)</label>
+              <label class="form-label">最长超时 (秒)</label>
               <input
                 type="number"
                 class="form-input"
@@ -256,7 +256,7 @@ const commonHotkeys = [
         <!-- 3. Mouse & Coordinates Section -->
         <div v-if="isMouseClick || selectedStep.action_type === 'image_click'" class="prop-section-card">
           <div class="section-title">
-            <MousePointer :size="14" class="section-icon" />
+            <MousePointer :size="13" class="section-icon" />
             <span>鼠标点击行为</span>
           </div>
 
@@ -283,7 +283,7 @@ const commonHotkeys = [
             </div>
 
             <button class="btn btn-secondary full-btn" @click="pickMousePosForCurrentStep">
-              <MapPin :size="14" />
+              <MapPin :size="13" />
               <span>拾取当前鼠标位置</span>
             </button>
           </template>
@@ -298,7 +298,7 @@ const commonHotkeys = [
               >
                 <option value="left">鼠标左键</option>
                 <option value="right">鼠标右键</option>
-                <option value="middle">鼠标中键 / 滚轮</option>
+                <option value="middle">鼠标中键</option>
               </select>
             </div>
 
@@ -312,7 +312,7 @@ const commonHotkeys = [
                 <option value="single">单击</option>
                 <option value="double">双击</option>
                 <option value="triple">三击</option>
-                <option value="down">按下 (保持)</option>
+                <option value="down">按下保持</option>
                 <option value="up">释放</option>
               </select>
             </div>
@@ -334,7 +334,7 @@ const commonHotkeys = [
         <!-- 4. Drag Section -->
         <div v-if="isDrag" class="prop-section-card">
           <div class="section-title">
-            <Move :size="14" class="section-icon" />
+            <Move :size="13" class="section-icon" />
             <span>拖拽起点与终点</span>
           </div>
 
@@ -360,7 +360,7 @@ const commonHotkeys = [
           </div>
 
           <button class="btn btn-secondary full-btn" @click="pickMousePosForCurrentStep">
-            <MapPin :size="14" />
+            <MapPin :size="13" />
             <span>拾取当前鼠标为起点</span>
           </button>
 
@@ -386,7 +386,7 @@ const commonHotkeys = [
           </div>
 
           <button class="btn btn-secondary full-btn" @click="pickDragEndPos">
-            <MapPin :size="14" />
+            <MapPin :size="13" />
             <span>拾取当前鼠标为终点</span>
           </button>
 
@@ -418,7 +418,7 @@ const commonHotkeys = [
         <!-- 5. Text Input Section -->
         <div v-if="isText" class="prop-section-card">
           <div class="section-title">
-            <Type :size="14" class="section-icon" />
+            <Type :size="13" class="section-icon" />
             <span>文本输入内容</span>
           </div>
 
@@ -440,7 +440,7 @@ const commonHotkeys = [
                 :checked="selectedStep.use_clipboard !== false"
                 @change="updateCurrentStep('use_clipboard', $event.target.checked)"
               />
-              <span>使用剪贴板快速粘贴 (推荐，支持中文与长文本)</span>
+              <span>使用剪贴板快速粘贴 (推荐)</span>
             </label>
           </div>
         </div>
@@ -448,7 +448,7 @@ const commonHotkeys = [
         <!-- 6. Hotkeys Section -->
         <div v-if="isHotkey" class="prop-section-card">
           <div class="section-title">
-            <Zap :size="14" class="section-icon" />
+            <Zap :size="13" class="section-icon" />
             <span>快捷键配置</span>
           </div>
 
@@ -463,7 +463,7 @@ const commonHotkeys = [
           </div>
 
           <div class="form-group">
-            <label class="form-label">快速选择常用快捷键:</label>
+            <label class="form-label">常用快捷键:</label>
             <div class="hotkey-chips">
               <button
                 v-for="hk in commonHotkeys"
@@ -480,7 +480,7 @@ const commonHotkeys = [
         <!-- 7. Delay Section -->
         <div v-if="isWait" class="prop-section-card">
           <div class="section-title">
-            <Clock :size="14" class="section-icon" />
+            <Clock :size="13" class="section-icon" />
             <span>延时等待设置</span>
           </div>
 
@@ -501,11 +501,11 @@ const commonHotkeys = [
         <div class="advanced-accordion">
           <button class="advanced-toggle-btn" @click="isAdvancedOpen = !isAdvancedOpen">
             <div class="accordion-title">
-              <Settings2 :size="14" class="accordion-icon" />
-              <span>高级参数设置 (选填，使用系统推荐默认值)</span>
+              <Settings2 :size="13" class="accordion-icon" />
+              <span>高级参数设置</span>
             </div>
-            <ChevronUp v-if="isAdvancedOpen" :size="14" />
-            <ChevronDown v-else :size="14" />
+            <ChevronUp v-if="isAdvancedOpen" :size="13" />
+            <ChevronDown v-else :size="13" />
           </button>
 
           <div v-show="isAdvancedOpen" class="advanced-content">
@@ -534,7 +534,7 @@ const commonHotkeys = [
                       :checked="selectedStep.use_grayscale !== false"
                       @change="updateCurrentStep('use_grayscale', $event.target.checked)"
                     />
-                    <span>灰度匹配模式</span>
+                    <span>灰度匹配</span>
                   </label>
                 </div>
                 <div class="form-group">
@@ -544,7 +544,7 @@ const commonHotkeys = [
                       :checked="selectedStep.multi_scale"
                       @change="updateCurrentStep('multi_scale', $event.target.checked)"
                     />
-                    <span>多尺度自适应 (高分屏)</span>
+                    <span>多尺度自适应</span>
                   </label>
                 </div>
               </div>
@@ -552,7 +552,7 @@ const commonHotkeys = [
 
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label">执行前延时 (秒)</label>
+                <label class="form-label">前延时 (秒)</label>
                 <input
                   type="number"
                   class="form-input"
@@ -563,7 +563,7 @@ const commonHotkeys = [
                 />
               </div>
               <div class="form-group">
-                <label class="form-label">执行后延时 (秒)</label>
+                <label class="form-label">后延时 (秒)</label>
                 <input
                   type="number"
                   class="form-input"
@@ -577,7 +577,7 @@ const commonHotkeys = [
 
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label">失败重试次数</label>
+                <label class="form-label">重试次数</label>
                 <input
                   type="number"
                   class="form-input"
@@ -588,25 +588,25 @@ const commonHotkeys = [
                 />
               </div>
               <div class="form-group">
-                <label class="form-label">失败后策略</label>
+                <label class="form-label">失败策略</label>
                 <select
                   class="form-select"
                   :value="selectedStep.on_failure || 'stop'"
                   @change="updateCurrentStep('on_failure', $event.target.value)"
                 >
                   <option value="stop">终止流程 (推荐)</option>
-                  <option value="continue">忽略并继续下一步</option>
+                  <option value="continue">忽略继续</option>
                 </select>
               </div>
             </div>
 
             <div class="form-group">
-              <label class="form-label">步骤备注 / 说明</label>
+              <label class="form-label">步骤备注</label>
               <input
                 type="text"
                 class="form-input"
                 :value="selectedStep.comment || ''"
-                placeholder="选填，记录此步骤的目的或提示"
+                placeholder="选填，记录提示"
                 @input="updateCurrentStep('comment', $event.target.value)"
               />
             </div>
@@ -623,13 +623,13 @@ const commonHotkeys = [
   background: var(--bg-surface);
   display: flex;
   flex-direction: column;
-  min-width: 320px;
+  min-width: 280px;
   overflow: hidden;
 }
 
 .panel-header {
-  height: 42px;
-  padding: 0 14px;
+  height: 36px;
+  padding: 0 12px;
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border-subtle);
   display: flex;
@@ -641,8 +641,8 @@ const commonHotkeys = [
 .panel-title {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 13px;
+  gap: 6px;
+  font-size: 12.5px;
   font-weight: 600;
   color: var(--text-primary);
 }
@@ -653,9 +653,9 @@ const commonHotkeys = [
 
 .panel-badge {
   background: var(--bg-card);
-  padding: 2px 7px;
-  border-radius: 12px;
-  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 10.5px;
   color: var(--text-muted);
   font-weight: 500;
   border: 1px solid var(--border-subtle);
@@ -664,7 +664,7 @@ const commonHotkeys = [
 .inspector-body {
   flex: 1;
   overflow-y: auto;
-  padding: 14px;
+  padding: 10px;
 }
 
 .inspector-empty {
@@ -673,11 +673,11 @@ const commonHotkeys = [
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 10px;
   color: var(--text-muted);
-  font-size: 13px;
+  font-size: 12px;
   text-align: center;
-  padding: 30px;
+  padding: 20px;
 }
 
 .empty-guide-icon {
@@ -688,24 +688,24 @@ const commonHotkeys = [
 .inspector-form {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .prop-section-card {
   background: var(--bg-card);
   border: 1px solid var(--border-card);
   border-radius: var(--radius-md);
-  padding: 12px 14px;
+  padding: 10px 12px;
 }
 
 .section-title {
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
 
 .section-icon {
@@ -720,30 +720,30 @@ const commonHotkeys = [
   background: var(--bg-input);
   border: 1px dashed var(--border-card);
   border-radius: var(--radius-sm);
-  min-height: 90px;
-  max-height: 140px;
+  min-height: 64px;
+  max-height: 110px;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  margin-bottom: 10px;
-  padding: 6px;
+  margin-bottom: 8px;
+  padding: 4px;
 }
 
 .target-img-display {
   max-width: 100%;
-  max-height: 128px;
+  max-height: 100px;
   object-fit: contain;
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
 .target-img-placeholder {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .placeholder-icon {
@@ -752,22 +752,22 @@ const commonHotkeys = [
 }
 
 .subtext {
-  font-size: 10px;
+  font-size: 9.5px;
   color: var(--text-muted);
 }
 
 .image-buttons-row {
   display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 6px;
+  margin-bottom: 8px;
 }
 
 .btn-snip {
-  flex: 2;
+  flex: 1.8;
 }
 
 .btn-test-match {
-  flex: 1.5;
+  flex: 1.2;
 }
 
 .full-btn {
@@ -775,7 +775,7 @@ const commonHotkeys = [
 }
 
 .mt-sm {
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
 .val-primary {
@@ -791,12 +791,12 @@ const commonHotkeys = [
 .hotkey-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 4px;
 }
 
 .chip-btn {
-  font-size: 11px;
-  padding: 3px 8px;
+  font-size: 10.5px;
+  padding: 2px 6px;
 }
 
 /* Accordion */
@@ -809,7 +809,7 @@ const commonHotkeys = [
 
 .advanced-toggle-btn {
   width: 100%;
-  padding: 10px 14px;
+  padding: 8px 12px;
   background: transparent;
   border: none;
   display: flex;
@@ -817,7 +817,7 @@ const commonHotkeys = [
   justify-content: space-between;
   cursor: pointer;
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 500;
   transition: all 0.15s ease;
 }
@@ -830,7 +830,7 @@ const commonHotkeys = [
 .accordion-title {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
 
 .accordion-icon {
@@ -838,7 +838,7 @@ const commonHotkeys = [
 }
 
 .advanced-content {
-  padding: 12px 14px;
+  padding: 10px 12px;
   border-top: 1px solid var(--border-subtle);
   background: var(--bg-input);
 }

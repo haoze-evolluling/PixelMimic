@@ -47,7 +47,7 @@ const loopText = computed(() => {
       </div>
 
       <div class="status-item">
-        <Repeat :size="13" class="status-icon" />
+        <Repeat :size="12" class="status-icon" />
         <span>循环: <b class="highlight-val">{{ loopText }}</b></span>
       </div>
     </div>
@@ -55,7 +55,7 @@ const loopText = computed(() => {
     <!-- Status Right -->
     <div class="status-right">
       <div class="status-item">
-        <MousePointer :size="13" class="status-icon" />
+        <MousePointer :size="12" class="status-icon" />
         <span>实时光标: <b class="cursor-pos-val">X: {{ cursorPos.x }}, Y: {{ cursorPos.y }}</b></span>
       </div>
 
@@ -71,14 +71,14 @@ const loopText = computed(() => {
 
 <style scoped>
 .status-bar {
-  height: 28px;
+  height: 24px;
   background: var(--bg-header);
   border-top: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 14px;
-  font-size: 11px;
+  padding: 0 10px;
+  font-size: 10.5px;
   color: var(--text-secondary);
   flex-shrink: 0;
 }
@@ -86,19 +86,19 @@ const loopText = computed(() => {
 .status-left {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
 }
 
 .status-right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
 }
 
 .status-item {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
 
 .status-icon {
@@ -106,8 +106,8 @@ const loopText = computed(() => {
 }
 
 .status-indicator-dot {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: var(--color-success);
   transition: all 0.2s ease;
@@ -115,18 +115,18 @@ const loopText = computed(() => {
 
 .status-indicator-dot.running {
   background: var(--color-cyan);
-  box-shadow: 0 0 8px var(--color-cyan);
+  box-shadow: 0 0 6px var(--color-cyan);
   animation: pulse 1.5s infinite;
 }
 
 .status-indicator-dot.paused {
   background: var(--color-warning);
-  box-shadow: 0 0 8px var(--color-warning);
+  box-shadow: 0 0 6px var(--color-warning);
 }
 
 .status-indicator-dot.error {
   background: var(--color-danger);
-  box-shadow: 0 0 8px var(--color-danger);
+  box-shadow: 0 0 6px var(--color-danger);
 }
 
 .status-state-text {
@@ -157,22 +157,22 @@ const loopText = computed(() => {
 .hotkey-reminders {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   color: var(--text-muted);
 }
 
 .hk-tag {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 2px;
 }
 
 .hk-tag kbd {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: 3px;
-  padding: 1px 4px;
-  font-size: 10px;
+  border-radius: 2px;
+  padding: 0 3px;
+  font-size: 9.5px;
   font-family: inherit;
   color: var(--text-primary);
 }
