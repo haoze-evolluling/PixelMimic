@@ -23,6 +23,7 @@ const {
   clearAllSteps,
   loadSampleTemplate,
   testSingleStep,
+  viewMode,
 } = useWorkflow()
 
 const { stepStatuses } = useExecution()
@@ -64,6 +65,15 @@ const handleClearSteps = () => {
       </div>
 
       <div class="panel-actions">
+        <button
+          class="btn btn-secondary"
+          title="切换至可视化流程图画布"
+          style="font-size: 11px; padding: 2px 8px; gap: 4px; display: flex; align-items: center;"
+          @click="viewMode = 'canvas'"
+        >
+          <Sparkles :size="11" style="color: #38bdf8;" />
+          <span>画布模式</span>
+        </button>
         <button
           v-if="workflow.steps.length > 0"
           class="btn btn-secondary btn-icon-only"

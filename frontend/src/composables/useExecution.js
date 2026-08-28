@@ -3,6 +3,7 @@ import { usePyWebView } from './usePyWebView'
 import { useToast } from './useToast'
 
 const executionState = ref('idle')
+const activeStepIndex = ref(-1)
 const cursorPos = reactive({ x: 0, y: 0 })
 const loopProgress = reactive({ current: 1, total: 1 })
 const stepStatuses = reactive({})
@@ -29,6 +30,9 @@ export function useExecution() {
 
   const setExecutionState = (state) => {
     executionState.value = state
+    if (state === 'idle' || state === 'stopped' || state === 'completed' || state === 'error') {
+      activeStepIndex.value = -1
+    }
   }
 
   const setCursorPos = (x, y) => {
@@ -43,6 +47,7 @@ export function useExecution() {
 
   const resetStepStatuses = () => {
     Object.keys(stepStatuses).forEach(k => delete stepStatuses[k])
+    activeStepIndex.value = -1
   }
 
   const setStepStatus = (index, status) => {
@@ -52,6 +57,7 @@ export function useExecution() {
   // Setup backend event subscriptions
   const initEventListeners = () => {
     registerEventListener('step_started', (data) => {
+      activeStepIndex.value = data.index
       setStepStatus(data.index, { state: 'running' })
       const el = document.getElementById(`step-card-${data.index}`)
       if (el) {
@@ -79,6 +85,7 @@ export function useExecution() {
     })
 
     registerEventListener('execution_finished', (data) => {
+      activeStepIndex.value = -1
       if (data.success) {
         showToast('工作流执行完成！', 'success')
       } else {
@@ -132,6 +139,7 @@ export function useExecution() {
 
   return {
     executionState,
+    activeStepIndex,
     cursorPos,
     loopProgress,
     stepStatuses,

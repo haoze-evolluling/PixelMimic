@@ -15,6 +15,7 @@ const workflow = reactive({
 
 const filePath = ref(null)
 const selectedStepIndex = ref(-1)
+const viewMode = ref('canvas') // 'canvas' | 'list'
 
 export function useWorkflow() {
   const { getApi, registerEventListener } = usePyWebView()
@@ -53,7 +54,21 @@ export function useWorkflow() {
     }
   }
 
-  const quickAddStep = (actionType) => {
+  const calculateSmartNodePosition = (actionType) => {
+    if (!workflow.steps || workflow.steps.length === 0) {
+      return { x: 100, y: 160 }
+    }
+    const lastStep = workflow.steps[workflow.steps.length - 1]
+    const lastX = (lastStep.node_x !== undefined && lastStep.node_x !== null) ? lastStep.node_x : 100 + (workflow.steps.length - 1) * 280
+    const lastY = (lastStep.node_y !== undefined && lastStep.node_y !== null) ? lastStep.node_y : 160
+
+    if (lastStep.action_type === 'condition') {
+      return { x: lastX + 320, y: lastY + (workflow.steps.length % 2 === 0 ? 140 : -100) }
+    }
+    return { x: lastX + 280, y: lastY }
+  }
+
+  const quickAddStep = (actionType, customPos = null) => {
     const defaultNames = {
       image_click: '找图点击',
       image_wait: '等待图像出现',
@@ -69,6 +84,8 @@ export function useWorkflow() {
       wait_time: '等待延时',
       condition: '条件判断 (图像存在/不存在)',
     }
+
+    const pos = customPos || calculateSmartNodePosition(actionType)
 
     const newStep = {
       id: 'step-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
@@ -111,6 +128,8 @@ export function useWorkflow() {
       retry_count: 1,
       retry_interval: 0.5,
       on_failure: 'stop',
+      node_x: Math.round(pos.x),
+      node_y: Math.round(pos.y),
       comment: '',
     }
 
@@ -121,6 +140,91 @@ export function useWorkflow() {
     if (actionType === 'image_click' || actionType === 'image_wait' || actionType === 'condition') {
       showToast('点击【截取目标】即可框选要识别的目标', 'info')
     }
+  }
+
+  const updateStepPosition = (index, x, y) => {
+    if (index >= 0 && index < workflow.steps.length) {
+      workflow.steps[index].node_x = Math.round(x)
+      workflow.steps[index].node_y = Math.round(y)
+      syncWorkflow()
+    }
+  }
+
+  const autoLayoutNodes = () => {
+    if (!workflow.steps || workflow.steps.length === 0) return
+
+    // Position root and sequential flow horizontally with branch offsets
+    let curX = 80
+    let curY = 160
+    const startY = 160
+
+    workflow.steps.forEach((step, idx) => {
+      if (idx === 0) {
+        step.node_x = curX
+        step.node_y = curY
+        curX += 280
+      } else {
+        const prevStep = workflow.steps[idx - 1]
+        if (prevStep.action_type === 'condition') {
+          // If previous was condition, place next sequential step
+          step.node_x = curX
+          step.node_y = curY
+          curX += 280
+        } else {
+          step.node_x = curX
+          step.node_y = startY
+          curX += 280
+        }
+      }
+    })
+
+    syncWorkflow()
+    showToast('已完成画布智能排版对齐', 'success')
+  }
+
+  const connectSteps = (sourceIndex, targetIndex, portType = 'next') => {
+    if (sourceIndex < 0 || sourceIndex >= workflow.steps.length) return
+    if (targetIndex < 0 || targetIndex >= workflow.steps.length) return
+    if (sourceIndex === targetIndex) return
+
+    const sourceStep = workflow.steps[sourceIndex]
+    const targetStepNum = targetIndex + 1
+
+    if (portType === 'then') {
+      sourceStep.then_action = 'jump'
+      sourceStep.then_jump_step = targetStepNum
+      showToast(`已建立分支连线: 成立时跳转至步骤 #${targetStepNum}`, 'success')
+    } else if (portType === 'else') {
+      sourceStep.else_action = 'jump'
+      sourceStep.else_jump_step = targetStepNum
+      showToast(`已建立分支连线: 不成立时跳转至步骤 #${targetStepNum}`, 'success')
+    } else {
+      // Default next port
+      if (sourceStep.action_type === 'condition') {
+        sourceStep.then_action = 'jump'
+        sourceStep.then_jump_step = targetStepNum
+      } else if (targetIndex === sourceIndex + 1) {
+        // Natural sequence
+        showToast(`步骤 #${sourceIndex + 1} 顺序执行步骤 #${targetStepNum}`, 'info')
+      } else {
+        // Move target to next position or advise
+        showToast(`已连接步骤 #${sourceIndex + 1} 到步骤 #${targetStepNum}`, 'success')
+      }
+    }
+    syncWorkflow()
+  }
+
+  const disconnectBranch = (sourceIndex, portType) => {
+    if (sourceIndex < 0 || sourceIndex >= workflow.steps.length) return
+    const step = workflow.steps[sourceIndex]
+    if (portType === 'then') {
+      step.then_action = 'continue'
+      showToast(`已重置步骤 #${sourceIndex + 1} 成立分支为继续执行`, 'info')
+    } else if (portType === 'else') {
+      step.else_action = 'continue'
+      showToast(`已重置步骤 #${sourceIndex + 1} 不成立分支为继续执行`, 'info')
+    }
+    syncWorkflow()
   }
 
   const updateCurrentStep = (key, value) => {
@@ -370,5 +474,10 @@ export function useWorkflow() {
     testSingleStep,
     syncWorkflow,
     initWorkflowListeners,
+    viewMode,
+    updateStepPosition,
+    autoLayoutNodes,
+    connectSteps,
+    disconnectBranch,
   }
 }

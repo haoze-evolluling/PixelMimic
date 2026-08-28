@@ -149,6 +149,10 @@ class StepNode:
     retry_interval: float = 0.5
     on_failure: OnFailureAction = OnFailureAction.STOP
 
+    # Visual Canvas Layout coordinates (for n8n-style workflow editor)
+    node_x: int = 0
+    node_y: int = 0
+
     # Extensible Metadata
     comment: str = ""
     metadata: Dict[str, Any] = field(default_factory=dict)
@@ -199,6 +203,8 @@ class StepNode:
             "retry_count": self.retry_count,
             "retry_interval": self.retry_interval,
             "on_failure": self.on_failure.value if isinstance(self.on_failure, OnFailureAction) else self.on_failure,
+            "node_x": self.node_x,
+            "node_y": self.node_y,
             "comment": self.comment,
             "metadata": dict(self.metadata),
         }

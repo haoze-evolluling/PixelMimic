@@ -8,13 +8,6 @@ import threading
 import time
 from typing import Any, Callable, Dict, List, Optional
 
-try:
-    from PyQt6.QtCore import QObject, pyqtSignal
-    HAS_PYQT = True
-except ImportError:
-    HAS_PYQT = False
-    QObject = object
-
 from pixelmimic.core.actions import ActionRegistry
 from pixelmimic.core.actions.base import ExecutionContext
 from pixelmimic.core.matcher import ImageMatcher
@@ -22,23 +15,11 @@ from pixelmimic.core.models import ActionResult, ExecutionState, OnFailureAction
 from pixelmimic.core.mouse_keyboard import InputDriver
 
 
-class ExecutionSignals(QObject if HAS_PYQT else object):
-    """Signals for Qt GUI integration (if PyQt is available)."""
-    if HAS_PYQT:
-        step_started = pyqtSignal(int, str)       # (step_index, step_name)
-        step_finished = pyqtSignal(int, bool, str) # (step_index, success, message)
-        state_changed = pyqtSignal(str)           # state.value
-        log_emitted = pyqtSignal(str, str)        # (level, message)
-        loop_progress = pyqtSignal(int, int)      # (current_loop, total_loops)
-        execution_finished = pyqtSignal(bool, str) # (all_success, summary)
-
-
 class ExecutionEngine:
-    """Core Workflow Execution Engine with event dispatching."""
+    """Core Workflow Execution Engine with pub-sub event dispatching."""
 
     def __init__(self, workflow: Optional[Workflow] = None):
         self.workflow = workflow or Workflow()
-        self.signals = ExecutionSignals() if HAS_PYQT else None
         self.state: ExecutionState = ExecutionState.IDLE
         self.context: ExecutionContext = ExecutionContext()
         self.matcher = ImageMatcher()
@@ -74,21 +55,10 @@ class ExecutionEngine:
         with self._lock:
             self.state = new_state
         self._emit("state_changed", new_state.value)
-        if self.signals and HAS_PYQT:
-            try:
-                self.signals.state_changed.emit(new_state.value)
-            except Exception:
-                pass
 
     def _log(self, level: str, message: str):
         self._emit("log_emitted", level, message)
-        if self.signals and HAS_PYQT:
-            try:
-                self.signals.log_emitted.emit(level, message)
-            except Exception:
-                pass
-        else:
-            print(f"[{level}] {message}")
+        print(f"[{level}] {message}")
 
     def start(self):
         """Start running the workflow in a background thread."""
@@ -167,11 +137,6 @@ class ExecutionEngine:
                 self.context.loop_index = loop_counter
 
                 self._emit("loop_progress", loop_counter, total_loops)
-                if self.signals and HAS_PYQT:
-                    try:
-                        self.signals.loop_progress.emit(loop_counter, total_loops)
-                    except Exception:
-                        pass
 
                 if total_loops > 1:
                     self._log("INFO", f">> 第 {loop_counter}/{total_loops} 次循环开始")
@@ -196,21 +161,11 @@ class ExecutionEngine:
                     self.context.total_steps = len(self.workflow.steps)
 
                     self._emit("step_started", idx, step.name)
-                    if self.signals and HAS_PYQT:
-                        try:
-                            self.signals.step_started.emit(idx, step.name)
-                        except Exception:
-                            pass
 
                     action = ActionRegistry.create(step)
                     result = action.execute(self.context)
 
                     self._emit("step_finished", idx, result.success, result.message)
-                    if self.signals and HAS_PYQT:
-                        try:
-                            self.signals.step_finished.emit(idx, result.success, result.message)
-                        except Exception:
-                            pass
 
                     if not result.success:
                         on_fail = step.on_failure
@@ -225,11 +180,6 @@ class ExecutionEngine:
                             self._log("ERROR", f"步骤 #{idx + 1} 执行失败，流程终止: {result.message}")
                             self._set_state(ExecutionState.ERROR)
                             self._emit("execution_finished", False, f"步骤 #{idx + 1} 失败: {result.message}")
-                            if self.signals and HAS_PYQT:
-                                try:
-                                    self.signals.execution_finished.emit(False, f"步骤 #{idx + 1} 失败")
-                                except Exception:
-                                    pass
                             return
                         else:
                             self._log("WARNING", f"步骤 #{idx + 1} 失败但设置为忽略并继续")
@@ -268,27 +218,12 @@ class ExecutionEngine:
             self._set_state(ExecutionState.COMPLETED)
             self._log("SUCCESS", f"=== 工作流【{self.workflow.name}】执行完毕 (完成 {loop_counter} 次循环) ===")
             self._emit("execution_finished", overall_success, "执行完成")
-            if self.signals and HAS_PYQT:
-                try:
-                    self.signals.execution_finished.emit(overall_success, "执行完成")
-                except Exception:
-                    pass
 
         except InterruptedError:
             self._set_state(ExecutionState.STOPPED)
             self._log("WARNING", "工作流已停止")
             self._emit("execution_finished", False, "用户手动停止")
-            if self.signals and HAS_PYQT:
-                try:
-                    self.signals.execution_finished.emit(False, "用户手动停止")
-                except Exception:
-                    pass
         except Exception as e:
             self._set_state(ExecutionState.ERROR)
             self._log("ERROR", f"工作流发生未捕获异常: {str(e)}")
             self._emit("execution_finished", False, str(e))
-            if self.signals and HAS_PYQT:
-                try:
-                    self.signals.execution_finished.emit(False, str(e))
-                except Exception:
-                    pass

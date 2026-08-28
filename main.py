@@ -21,19 +21,15 @@ def main():
     # Create Python-JS API controller
     api = PyWebViewApi()
 
-    # Path to webview frontend (prioritize Vue 3 dist build)
+    # Direct path to modern Vue 3 webview distribution
     dist_html_path = os.path.abspath(
         os.path.join(os.path.dirname(__file__), "pixelmimic", "gui", "web", "dist", "index.html")
     )
-    fallback_html_path = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "pixelmimic", "gui", "web", "index.html")
-    )
-    html_path = dist_html_path if os.path.exists(dist_html_path) else fallback_html_path
 
     # Create PyWebView native window
     window = webview.create_window(
         title="PixelMimic - 桌面可视化自动化大师",
-        url=html_path,
+        url=dist_html_path,
         js_api=api,
         width=1040,
         height=680,
