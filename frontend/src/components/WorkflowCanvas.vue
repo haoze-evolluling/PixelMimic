@@ -4,6 +4,12 @@ import { useWorkflow } from '../composables/useWorkflow'
 import { useExecution } from '../composables/useExecution'
 import CanvasNode from './CanvasNode.vue'
 import {
+  calculateSmartWaypoints,
+  generateRoundedOrthogonalPath,
+  generateSmoothBezierPath,
+  getLongestSegmentCenter,
+} from '../utils/edgeRouting'
+import {
   ZoomIn,
   ZoomOut,
   Maximize2,
@@ -18,6 +24,9 @@ import {
   ChevronRight,
   List,
   GitBranch,
+  Route,
+  Waypoints,
+  CornerDownRight,
   X,
 } from 'lucide-vue-next'
 
@@ -35,7 +44,10 @@ const {
   loadSampleTemplate,
   testSingleStep,
   viewMode,
+  edgeStyle,
   quickAddStep,
+  updateEdgeCustomWaypoint,
+  resetEdgeCustomWaypoint,
 } = useWorkflow()
 
 const { stepStatuses, activeStepIndex, executionState } = useExecution()
@@ -62,9 +74,19 @@ const wiringData = reactive({
   currentY: 0,
 })
 
+// Edge Selection & Waypoint Dragging State
+const selectedEdgeId = ref(null)
+const hoveredEdgeId = ref(null)
+const draggingEdgeData = reactive({
+  isDragging: false,
+  sourceIndex: -1,
+  portType: 'next',
+  tempWaypoint: null,
+})
+
 const canvasContainerRef = ref(null)
 
-// Calculate all active connections (Edges)
+// Calculate all active connections (Edges) with Smart Obstacle Avoidance
 const connections = computed(() => {
   const list = []
   if (!workflow.steps || workflow.steps.length === 0) return list
@@ -72,6 +94,7 @@ const connections = computed(() => {
   workflow.steps.forEach((step, idx) => {
     const fromX = (step.node_x || 100) + 220
     const fromYBase = (step.node_y || 160)
+    const customRoutes = step.metadata?.custom_routes || {}
 
     if (step.action_type === 'condition') {
       // 1. True Branch
@@ -85,6 +108,21 @@ const connections = computed(() => {
 
       if (targetThenIdx >= 0 && targetThenIdx < workflow.steps.length && targetThenIdx !== idx) {
         const targetStep = workflow.steps[targetThenIdx]
+        const fromPos = { x: fromX, y: fromYBase + 26 }
+        const toPos = { x: targetStep.node_x || 100, y: (targetStep.node_y || 160) + 40 }
+
+        // Check if currently dragging waypoint for this edge
+        let customWp = customRoutes['then'] || null
+        if (draggingEdgeData.isDragging && draggingEdgeData.sourceIndex === idx && draggingEdgeData.portType === 'then') {
+          customWp = draggingEdgeData.tempWaypoint
+        }
+
+        const waypoints = calculateSmartWaypoints(fromPos, toPos, workflow.steps, idx, targetThenIdx, customWp)
+        const pathD = edgeStyle.value === 'bezier'
+          ? generateSmoothBezierPath(waypoints)
+          : generateRoundedOrthogonalPath(waypoints, 12)
+        const labelAnchor = getLongestSegmentCenter(waypoints)
+
         list.push({
           id: `conn-${idx}-true-${targetThenIdx}`,
           fromIndex: idx,
@@ -92,10 +130,14 @@ const connections = computed(() => {
           type: 'then',
           color: '#10b981',
           label: 'True 成立',
-          fromX: fromX,
-          fromY: fromYBase + 26,
-          toX: targetStep.node_x || 100,
-          toY: (targetStep.node_y || 160) + 40,
+          fromX: fromPos.x,
+          fromY: fromPos.y,
+          toX: toPos.x,
+          toY: toPos.y,
+          waypoints,
+          pathD,
+          labelAnchor,
+          hasCustomRoute: !!customRoutes['then'],
           isActive: activeStepIndex.value === idx || activeStepIndex.value === targetThenIdx,
         })
       }
@@ -111,6 +153,20 @@ const connections = computed(() => {
 
       if (targetElseIdx >= 0 && targetElseIdx < workflow.steps.length && targetElseIdx !== idx) {
         const targetStep = workflow.steps[targetElseIdx]
+        const fromPos = { x: fromX, y: fromYBase + 62 }
+        const toPos = { x: targetStep.node_x || 100, y: (targetStep.node_y || 160) + 40 }
+
+        let customWp = customRoutes['else'] || null
+        if (draggingEdgeData.isDragging && draggingEdgeData.sourceIndex === idx && draggingEdgeData.portType === 'else') {
+          customWp = draggingEdgeData.tempWaypoint
+        }
+
+        const waypoints = calculateSmartWaypoints(fromPos, toPos, workflow.steps, idx, targetElseIdx, customWp)
+        const pathD = edgeStyle.value === 'bezier'
+          ? generateSmoothBezierPath(waypoints)
+          : generateRoundedOrthogonalPath(waypoints, 12)
+        const labelAnchor = getLongestSegmentCenter(waypoints)
+
         list.push({
           id: `conn-${idx}-false-${targetElseIdx}`,
           fromIndex: idx,
@@ -118,29 +174,60 @@ const connections = computed(() => {
           type: 'else',
           color: '#f59e0b',
           label: 'False 不成立',
-          fromX: fromX,
-          fromY: fromYBase + 62,
-          toX: targetStep.node_x || 100,
-          toY: (targetStep.node_y || 160) + 40,
+          fromX: fromPos.x,
+          fromY: fromPos.y,
+          toX: toPos.x,
+          toY: toPos.y,
+          waypoints,
+          pathD,
+          labelAnchor,
+          hasCustomRoute: !!customRoutes['else'],
           isActive: activeStepIndex.value === idx || activeStepIndex.value === targetElseIdx,
         })
       }
     } else {
-      // Standard Action Node -> Next Step
-      if (idx < workflow.steps.length - 1) {
-        const nextStep = workflow.steps[idx + 1]
+      // Standard Action Node -> Next Step or Custom Jump / Loop
+      let targetIdx = -1
+      const isJump = step.next_action === 'jump' && step.next_jump_step
+      if (isJump) {
+        targetIdx = step.next_jump_step - 1
+      } else if (idx < workflow.steps.length - 1) {
+        targetIdx = idx + 1
+      }
+
+      if (targetIdx >= 0 && targetIdx < workflow.steps.length && targetIdx !== idx) {
+        const nextStep = workflow.steps[targetIdx]
+        const fromPos = { x: fromX, y: fromYBase + 40 }
+        const toPos = { x: nextStep.node_x || 100, y: (nextStep.node_y || 160) + 40 }
+
+        let customWp = customRoutes['next'] || null
+        if (draggingEdgeData.isDragging && draggingEdgeData.sourceIndex === idx && draggingEdgeData.portType === 'next') {
+          customWp = draggingEdgeData.tempWaypoint
+        }
+
+        const waypoints = calculateSmartWaypoints(fromPos, toPos, workflow.steps, idx, targetIdx, customWp)
+        const pathD = edgeStyle.value === 'bezier'
+          ? generateSmoothBezierPath(waypoints)
+          : generateRoundedOrthogonalPath(waypoints, 12)
+        const labelAnchor = getLongestSegmentCenter(waypoints)
+
         list.push({
-          id: `conn-${idx}-next-${idx + 1}`,
+          id: `conn-${idx}-next-${targetIdx}`,
           fromIndex: idx,
-          toIndex: idx + 1,
+          toIndex: targetIdx,
           type: 'next',
+          isCustomJump: isJump,
           color: '#38bdf8',
-          label: 'Next',
-          fromX: fromX,
-          fromY: fromYBase + 40,
-          toX: nextStep.node_x || 100,
-          toY: (nextStep.node_y || 160) + 40,
-          isActive: activeStepIndex.value === idx || activeStepIndex.value === idx + 1,
+          label: isJump ? `跳至 #${targetIdx + 1}` : 'Next',
+          fromX: fromPos.x,
+          fromY: fromPos.y,
+          toX: toPos.x,
+          toY: toPos.y,
+          waypoints,
+          pathD,
+          labelAnchor,
+          hasCustomRoute: !!customRoutes['next'],
+          isActive: activeStepIndex.value === idx || activeStepIndex.value === targetIdx,
         })
       }
     }
@@ -149,19 +236,35 @@ const connections = computed(() => {
   return list
 })
 
-// Cubic Bezier Path Helper
-const getBezierPath = (x1, y1, x2, y2) => {
-  const dx = Math.max(40, Math.abs(x2 - x1) * 0.5)
-  return `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`
-}
+// Live Preview Wire Path
+const livePreviewPath = computed(() => {
+  if (!isWiring.value) return ''
+  const waypoints = calculateSmartWaypoints(
+    { x: wiringData.startX, y: wiringData.startY },
+    { x: wiringData.currentX, y: wiringData.currentY },
+    workflow.steps,
+    wiringData.sourceIndex,
+    -1
+  )
+  return edgeStyle.value === 'bezier'
+    ? generateSmoothBezierPath(waypoints)
+    : generateRoundedOrthogonalPath(waypoints, 12)
+})
 
-// Canvas Panning Handlers
+// Canvas Pointer Handlers
 const handleCanvasPointerDown = (e) => {
-  if (e.target.closest('.canvas-node') || e.target.closest('.canvas-toolbar') || e.target.closest('.onboarding-canvas')) {
+  if (
+    e.target.closest('.canvas-node') ||
+    e.target.closest('.canvas-toolbar') ||
+    e.target.closest('.onboarding-canvas') ||
+    e.target.closest('.edge-group') ||
+    e.target.closest('.edge-control-handle')
+  ) {
     return
   }
   // Click on empty canvas background
   selectStep(-1)
+  selectedEdgeId.value = null
   isPanning.value = true
   panStart.x = e.clientX - panX.value
   panStart.y = e.clientY - panY.value
@@ -195,6 +298,20 @@ const handleGlobalPointerMove = (e) => {
       wiringData.currentX = (e.clientX - containerRect.left - panX.value) / scale.value
       wiringData.currentY = (e.clientY - containerRect.top - panY.value) / scale.value
     }
+    return
+  }
+
+  // 4. Dragging Edge Waypoint Handle
+  if (draggingEdgeData.isDragging) {
+    const containerRect = canvasContainerRef.value?.getBoundingClientRect()
+    if (containerRect) {
+      const mouseCanvasX = (e.clientX - containerRect.left - panX.value) / scale.value
+      const mouseCanvasY = (e.clientY - containerRect.top - panY.value) / scale.value
+      draggingEdgeData.tempWaypoint = {
+        x: mouseCanvasX,
+        y: mouseCanvasY,
+      }
+    }
   }
 }
 
@@ -218,6 +335,39 @@ const handleGlobalPointerUp = (e) => {
     isWiring.value = false
     wiringData.sourceIndex = -1
   }
+  if (draggingEdgeData.isDragging) {
+    if (draggingEdgeData.tempWaypoint && draggingEdgeData.sourceIndex >= 0) {
+      updateEdgeCustomWaypoint(
+        draggingEdgeData.sourceIndex,
+        draggingEdgeData.portType,
+        draggingEdgeData.tempWaypoint
+      )
+    }
+    draggingEdgeData.isDragging = false
+    draggingEdgeData.sourceIndex = -1
+    draggingEdgeData.tempWaypoint = null
+  }
+}
+
+// Edge Handle Pointer Down
+const handleEdgeHandlePointerDown = ({ event, conn }) => {
+  event.stopPropagation()
+  selectedEdgeId.value = conn.id
+  draggingEdgeData.isDragging = true
+  draggingEdgeData.sourceIndex = conn.fromIndex
+  draggingEdgeData.portType = conn.type
+  draggingEdgeData.tempWaypoint = { x: conn.labelAnchor.x, y: conn.labelAnchor.y }
+}
+
+const handleEdgeClick = (conn, e) => {
+  e.stopPropagation()
+  selectedEdgeId.value = conn.id
+  selectStep(-1)
+}
+
+const handleEdgeDoubleClick = (conn, e) => {
+  e.stopPropagation()
+  resetEdgeCustomWaypoint(conn.fromIndex, conn.type)
 }
 
 // Zoom with Mouse Wheel
@@ -325,6 +475,16 @@ const handleKeyDown = (e) => {
     return
   }
   if (e.key === 'Delete' || e.key === 'Backspace') {
+    if (selectedEdgeId.value) {
+      const edge = connections.value.find(c => c.id === selectedEdgeId.value)
+      if (edge) {
+        if (edge.type === 'then' || edge.type === 'else') {
+          disconnectBranch(edge.fromIndex, edge.type)
+        }
+        selectedEdgeId.value = null
+      }
+      return
+    }
     if (selectedStepIndex.value >= 0) {
       deleteStep(selectedStepIndex.value)
     }
@@ -422,38 +582,59 @@ onUnmounted(() => {
         </defs>
 
         <!-- Existing Active Connections -->
-        <g v-for="conn in connections" :key="conn.id" class="edge-group">
+        <g
+          v-for="conn in connections"
+          :key="conn.id"
+          class="edge-group"
+          :class="{
+            'edge-is-selected': selectedEdgeId === conn.id,
+            'edge-has-custom': conn.hasCustomRoute,
+          }"
+          @click="handleEdgeClick(conn, $event)"
+          @dblclick="handleEdgeDoubleClick(conn, $event)"
+          @mouseenter="hoveredEdgeId = conn.id"
+          @mouseleave="hoveredEdgeId = null"
+        >
           <!-- Background wider hit-box path for easier selection -->
           <path
-            :d="getBezierPath(conn.fromX, conn.fromY, conn.toX, conn.toY)"
+            :d="conn.pathD"
             class="edge-hitbox"
+          />
+
+          <!-- Selection Outer Glow -->
+          <path
+            v-if="selectedEdgeId === conn.id"
+            :d="conn.pathD"
+            class="edge-selection-halo"
+            :stroke="conn.color"
           />
 
           <!-- Visible Connection Line -->
           <path
-            :d="getBezierPath(conn.fromX, conn.fromY, conn.toX, conn.toY)"
+            :d="conn.pathD"
             class="edge-path"
-            :class="{ 'edge-active': conn.isActive }"
+            :class="{ 'edge-active': conn.isActive, 'edge-selected': selectedEdgeId === conn.id }"
             :stroke="conn.color"
             :marker-end="`url(#arrow-${conn.type})`"
           />
 
           <!-- Edge Midpoint Branch Tag / Disconnect Button -->
           <g
-            v-if="conn.type === 'then' || conn.type === 'else'"
+            v-if="conn.type === 'then' || conn.type === 'else' || conn.isCustomJump"
             class="edge-label-group"
-            :transform="`translate(${(conn.fromX + conn.toX) / 2}, ${(conn.fromY + conn.toY) / 2})`"
+            :transform="`translate(${conn.labelAnchor.x}, ${conn.labelAnchor.y})`"
             @click.stop="disconnectBranch(conn.fromIndex, conn.type)"
+            title="点击断开该跳转连线"
           >
             <rect
-              x="-28"
+              :x="conn.type === 'next' ? -38 : -30"
               y="-10"
-              width="56"
+              :width="conn.type === 'next' ? 76 : 60"
               height="20"
               rx="10"
-              :fill="conn.type === 'then' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)'"
+              :fill="conn.type === 'then' ? 'rgba(16, 185, 129, 0.25)' : (conn.type === 'else' ? 'rgba(245, 158, 11, 0.25)' : 'rgba(56, 189, 248, 0.25)')"
               :stroke="conn.color"
-              stroke-width="1"
+              stroke-width="1.2"
             />
             <text
               x="0"
@@ -463,15 +644,48 @@ onUnmounted(() => {
               font-size="9"
               font-weight="600"
             >
-              {{ conn.type === 'then' ? 'True' : 'False' }}
+              {{ conn.type === 'then' ? 'True 成立' : (conn.type === 'else' ? 'False 不成立' : conn.label) }}
             </text>
+          </g>
+
+          <!-- Interactive Waypoint Control Drag Handle -->
+          <g
+            v-if="hoveredEdgeId === conn.id || selectedEdgeId === conn.id || conn.hasCustomRoute"
+            class="edge-control-handle"
+            :class="{
+              'is-dragging': draggingEdgeData.isDragging && draggingEdgeData.sourceIndex === conn.fromIndex && draggingEdgeData.portType === conn.type,
+              'has-custom': conn.hasCustomRoute
+            }"
+            :transform="`translate(${conn.labelAnchor.x}, ${conn.labelAnchor.y})`"
+            @pointerdown="handleEdgeHandlePointerDown({ event: $event, conn })"
+            @dblclick.stop="resetEdgeCustomWaypoint(conn.fromIndex, conn.type)"
+          >
+            <circle r="14" class="handle-hitbox" fill="transparent" />
+            <circle
+              r="7"
+              class="handle-outer"
+              :stroke="conn.color"
+            />
+            <circle
+              r="3.5"
+              class="handle-inner"
+              :fill="conn.color"
+            />
+
+            <!-- Tooltip text when hovered -->
+            <g v-if="hoveredEdgeId === conn.id" class="handle-tooltip" transform="translate(0, -18)">
+              <rect x="-44" y="-9" width="88" height="18" rx="4" fill="#0f172a" stroke="rgba(255,255,255,0.2)" stroke-width="1" />
+              <text x="0" y="3" text-anchor="middle" fill="#e2e8f0" font-size="8.5" font-weight="500">
+                {{ conn.hasCustomRoute ? '拖拽调整 / 双击复位' : '拖动调整连线位置' }}
+              </text>
+            </g>
           </g>
         </g>
 
         <!-- Live Dragging Connection Line -->
         <path
           v-if="isWiring"
-          :d="getBezierPath(wiringData.startX, wiringData.startY, wiringData.currentX, wiringData.currentY)"
+          :d="livePreviewPath"
           class="edge-preview"
           :stroke="wiringData.portType === 'then' ? '#10b981' : (wiringData.portType === 'else' ? '#f59e0b' : '#38bdf8')"
           stroke-dasharray="5 5"
@@ -532,6 +746,20 @@ onUnmounted(() => {
       </button>
       <button class="toolbar-btn" title="自适应居中" @click="fitView">
         <Maximize2 :size="13" />
+      </button>
+
+      <div class="toolbar-divider"></div>
+
+      <!-- Edge Routing Style Toggle -->
+      <button
+        class="toolbar-btn"
+        :class="{ 'highlight-btn': edgeStyle === 'orthogonal' }"
+        :title="edgeStyle === 'orthogonal' ? '当前：智能圆角折线 (点击切换为平滑曲线)' : '当前：平滑避让曲线 (点击切换为智能圆角折线)'"
+        @click="edgeStyle = edgeStyle === 'orthogonal' ? 'bezier' : 'orthogonal'"
+      >
+        <Route v-if="edgeStyle === 'orthogonal'" :size="13" />
+        <Waypoints v-else :size="13" />
+        <span>{{ edgeStyle === 'orthogonal' ? '智能折线' : '平滑曲线' }}</span>
       </button>
 
       <div class="toolbar-divider"></div>
@@ -637,13 +865,24 @@ onUnmounted(() => {
 .edge-hitbox {
   fill: none;
   stroke: transparent;
-  stroke-width: 18;
+  stroke-width: 22;
+  cursor: pointer;
+}
+
+.edge-selection-halo {
+  fill: none;
+  stroke-width: 8;
+  opacity: 0.35;
+  filter: drop-shadow(0 0 8px currentColor);
+  pointer-events: none;
 }
 
 .edge-path {
   fill: none;
-  stroke-width: 2;
-  transition: stroke-width 0.15s ease, stroke 0.15s ease;
+  stroke-width: 2.2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  transition: stroke-width 0.15s ease, stroke 0.15s ease, filter 0.15s ease;
 }
 
 .edge-group:hover .edge-path {
@@ -651,11 +890,16 @@ onUnmounted(() => {
   filter: drop-shadow(0 0 6px currentColor);
 }
 
+.edge-path.edge-selected {
+  stroke-width: 3.5;
+  filter: drop-shadow(0 0 8px currentColor);
+}
+
 .edge-path.edge-active {
-  stroke-width: 3;
+  stroke-width: 3.2;
   stroke-dasharray: 6 6;
   animation: flow-dash 1s linear infinite;
-  filter: drop-shadow(0 0 8px currentColor);
+  filter: drop-shadow(0 0 10px currentColor);
 }
 
 @keyframes flow-dash {
@@ -669,7 +913,9 @@ onUnmounted(() => {
 
 .edge-preview {
   fill: none;
-  stroke-width: 2;
+  stroke-width: 2.2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
   animation: flow-dash 0.6s linear infinite;
 }
 
@@ -679,7 +925,50 @@ onUnmounted(() => {
 }
 
 .edge-label-group:hover {
-  transform: scale(1.15);
+  transform: scale(1.12);
+}
+
+/* Edge Control Handle */
+.edge-control-handle {
+  cursor: grab;
+  transition: transform 0.15s ease;
+}
+
+.edge-control-handle:active,
+.edge-control-handle.is-dragging {
+  cursor: grabbing;
+  transform: scale(1.25);
+}
+
+.handle-hitbox {
+  cursor: grab;
+}
+
+.handle-outer {
+  fill: #0f172a;
+  stroke-width: 2;
+  transition: all 0.15s ease;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.6));
+}
+
+.edge-control-handle:hover .handle-outer {
+  transform: scale(1.3);
+  stroke-width: 2.5;
+  filter: drop-shadow(0 0 8px currentColor);
+}
+
+.handle-inner {
+  transition: all 0.15s ease;
+}
+
+.edge-control-handle.has-custom .handle-outer {
+  stroke-dasharray: 2 2;
+}
+
+.handle-tooltip {
+  pointer-events: none;
+  user-select: none;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));
 }
 
 /* Floating Toolbar */

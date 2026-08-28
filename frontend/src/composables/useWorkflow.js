@@ -16,6 +16,7 @@ const workflow = reactive({
 const filePath = ref(null)
 const selectedStepIndex = ref(-1)
 const viewMode = ref('canvas') // 'canvas' | 'list'
+const edgeStyle = ref('orthogonal') // 'orthogonal' | 'bezier'
 
 export function useWorkflow() {
   const { getApi, registerEventListener } = usePyWebView()
@@ -123,6 +124,8 @@ export function useWorkflow() {
       else_action: 'continue',
       else_jump_step: 1,
       else_skip_count: 1,
+      next_action: 'continue',
+      next_jump_step: 1,
       pre_delay: actionType === 'wait_time' ? 1.0 : 0.0,
       post_delay: 0.2,
       retry_count: 1,
@@ -199,16 +202,21 @@ export function useWorkflow() {
       sourceStep.else_jump_step = targetStepNum
       showToast(`已建立分支连线: 不成立时跳转至步骤 #${targetStepNum}`, 'success')
     } else {
-      // Default next port
+      // Default next port (Condition or Standard Action)
       if (sourceStep.action_type === 'condition') {
         sourceStep.then_action = 'jump'
         sourceStep.then_jump_step = targetStepNum
+        showToast(`已建立分支连线: 成立时跳转至步骤 #${targetStepNum}`, 'success')
       } else if (targetIndex === sourceIndex + 1) {
         // Natural sequence
+        sourceStep.next_action = 'continue'
+        sourceStep.next_jump_step = targetStepNum
         showToast(`步骤 #${sourceIndex + 1} 顺序执行步骤 #${targetStepNum}`, 'info')
       } else {
-        // Move target to next position or advise
-        showToast(`已连接步骤 #${sourceIndex + 1} 到步骤 #${targetStepNum}`, 'success')
+        // Custom jump / loop back
+        sourceStep.next_action = 'jump'
+        sourceStep.next_jump_step = targetStepNum
+        showToast(`已建立跳转连线: 步骤 #${sourceIndex + 1} 执行后跳转至步骤 #${targetStepNum}`, 'success')
       }
     }
     syncWorkflow()
@@ -223,8 +231,33 @@ export function useWorkflow() {
     } else if (portType === 'else') {
       step.else_action = 'continue'
       showToast(`已重置步骤 #${sourceIndex + 1} 不成立分支为继续执行`, 'info')
+    } else if (portType === 'next') {
+      step.next_action = 'continue'
+      showToast(`已重置步骤 #${sourceIndex + 1} 后续流向为顺序执行`, 'info')
     }
     syncWorkflow()
+  }
+
+  const updateEdgeCustomWaypoint = (sourceIndex, portType, waypoint) => {
+    if (sourceIndex < 0 || sourceIndex >= workflow.steps.length) return
+    const step = workflow.steps[sourceIndex]
+    if (!step.metadata) step.metadata = {}
+    if (!step.metadata.custom_routes) step.metadata.custom_routes = {}
+    step.metadata.custom_routes[portType] = {
+      x: Math.round(waypoint.x),
+      y: Math.round(waypoint.y),
+    }
+    syncWorkflow()
+  }
+
+  const resetEdgeCustomWaypoint = (sourceIndex, portType) => {
+    if (sourceIndex < 0 || sourceIndex >= workflow.steps.length) return
+    const step = workflow.steps[sourceIndex]
+    if (step.metadata && step.metadata.custom_routes && step.metadata.custom_routes[portType]) {
+      delete step.metadata.custom_routes[portType]
+      syncWorkflow()
+      showToast(`已重置连线为自动智能避让`, 'info')
+    }
   }
 
   const updateCurrentStep = (key, value) => {
@@ -475,9 +508,12 @@ export function useWorkflow() {
     syncWorkflow,
     initWorkflowListeners,
     viewMode,
+    edgeStyle,
     updateStepPosition,
     autoLayoutNodes,
     connectSteps,
     disconnectBranch,
+    updateEdgeCustomWaypoint,
+    resetEdgeCustomWaypoint,
   }
 }

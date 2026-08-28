@@ -205,7 +205,19 @@ class ExecutionEngine:
                         self._log("INFO", f">> 流程控制: 条件分支触发终止流程")
                         break
                     else:
-                        idx += 1
+                        # Check if step has a custom jump configured via canvas connection or flow setting
+                        step_next_action = getattr(step, "next_action", "continue")
+                        step_jump_target = getattr(step, "next_jump_step", None)
+                        if step_next_action == "jump" and step_jump_target is not None:
+                            jump_target = int(step_jump_target) - 1
+                            if 0 <= jump_target < len(self.workflow.steps):
+                                self._log("INFO", f">> 步骤跳转: 从步骤 #{idx + 1} 跳转到步骤 #{jump_target + 1}")
+                                idx = jump_target
+                            else:
+                                self._log("WARNING", f">> 跳转目标步骤 #{jump_target + 1} 超出范围 (总步数: {len(self.workflow.steps)})，流程结束")
+                                break
+                        else:
+                            idx += 1
 
                 # Check loop termination
                 if total_loops > 0 and loop_counter >= total_loops:

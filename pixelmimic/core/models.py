@@ -140,6 +140,10 @@ class StepNode:
     else_jump_step: int = 1
     else_skip_count: int = 1
 
+    # Flow routing parameters for standard and custom jumps
+    next_action: str = "continue"         # "continue" | "jump" | "stop"
+    next_jump_step: Optional[int] = None  # 1-indexed target step if next_action == "jump"
+
     # Timing & Retry parameters
     pre_delay: float = 0.0       # seconds before executing step
     post_delay: float = 0.2      # seconds after executing step
@@ -196,6 +200,8 @@ class StepNode:
             "else_action": self.else_action,
             "else_jump_step": self.else_jump_step,
             "else_skip_count": self.else_skip_count,
+            "next_action": self.next_action,
+            "next_jump_step": self.next_jump_step,
             "pre_delay": self.pre_delay,
             "post_delay": self.post_delay,
             "random_delay_min": self.random_delay_min,
