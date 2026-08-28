@@ -1,0 +1,265 @@
+"""
+Workflow execution engine with multi-threading, pause, resume, and real-time event callbacks.
+"""
+
+from __future__ import annotations
+from collections import defaultdict
+import threading
+import time
+from typing import Any, Callable, Dict, List, Optional
+
+try:
+    from PyQt6.QtCore import QObject, pyqtSignal
+    HAS_PYQT = True
+except ImportError:
+    HAS_PYQT = False
+    QObject = object
+
+from pixelmimic.core.actions import ActionRegistry
+from pixelmimic.core.actions.base import ExecutionContext
+from pixelmimic.core.matcher import ImageMatcher
+from pixelmimic.core.models import ActionResult, ExecutionState, OnFailureAction, StepNode, Workflow
+from pixelmimic.core.mouse_keyboard import InputDriver
+
+
+class ExecutionSignals(QObject if HAS_PYQT else object):
+    """Signals for Qt GUI integration (if PyQt is available)."""
+    if HAS_PYQT:
+        step_started = pyqtSignal(int, str)       # (step_index, step_name)
+        step_finished = pyqtSignal(int, bool, str) # (step_index, success, message)
+        state_changed = pyqtSignal(str)           # state.value
+        log_emitted = pyqtSignal(str, str)        # (level, message)
+        loop_progress = pyqtSignal(int, int)      # (current_loop, total_loops)
+        execution_finished = pyqtSignal(bool, str) # (all_success, summary)
+
+
+class ExecutionEngine:
+    """Core Workflow Execution Engine with event dispatching."""
+
+    def __init__(self, workflow: Optional[Workflow] = None):
+        self.workflow = workflow or Workflow()
+        self.signals = ExecutionSignals() if HAS_PYQT else None
+        self.state: ExecutionState = ExecutionState.IDLE
+        self.context: ExecutionContext = ExecutionContext()
+        self.matcher = ImageMatcher()
+        self._thread: Optional[threading.Thread] = None
+        self._lock = threading.Lock()
+        self._listeners: Dict[str, List[Callable[..., None]]] = defaultdict(list)
+
+    def add_listener(self, event_name: str, callback: Callable[..., None]):
+        """Subscribe to an execution event."""
+        if callback not in self._listeners[event_name]:
+            self._listeners[event_name].append(callback)
+
+    def remove_listener(self, event_name: str, callback: Callable[..., None]):
+        """Unsubscribe from an execution event."""
+        if callback in self._listeners[event_name]:
+            self._listeners[event_name].remove(callback)
+
+    def _emit(self, event_name: str, *args, **kwargs):
+        """Dispatch event to all registered Python listeners."""
+        for cb in list(self._listeners.get(event_name, [])):
+            try:
+                cb(*args, **kwargs)
+            except Exception as e:
+                print(f"[engine] Listener error on {event_name}: {e}")
+
+    def set_workflow(self, workflow: Workflow):
+        """Set or update the active workflow."""
+        if self.state == ExecutionState.RUNNING:
+            raise RuntimeError("无法在运行中更换工作流")
+        self.workflow = workflow
+
+    def _set_state(self, new_state: ExecutionState):
+        with self._lock:
+            self.state = new_state
+        self._emit("state_changed", new_state.value)
+        if self.signals and HAS_PYQT:
+            try:
+                self.signals.state_changed.emit(new_state.value)
+            except Exception:
+                pass
+
+    def _log(self, level: str, message: str):
+        self._emit("log_emitted", level, message)
+        if self.signals and HAS_PYQT:
+            try:
+                self.signals.log_emitted.emit(level, message)
+            except Exception:
+                pass
+        else:
+            print(f"[{level}] {message}")
+
+    def start(self):
+        """Start running the workflow in a background thread."""
+        if self.state == ExecutionState.RUNNING:
+            return
+
+        if not self.workflow.steps:
+            self._log("WARNING", "工作流中没有可执行的步骤")
+            return
+
+        self._set_state(ExecutionState.RUNNING)
+        self.context = ExecutionContext(
+            matcher=self.matcher,
+            input_driver=InputDriver,
+            log_callback=self._log,
+        )
+        self._thread = threading.Thread(target=self._run_workflow, daemon=True)
+        self._thread.start()
+
+    def pause(self):
+        """Pause execution."""
+        if self.state == ExecutionState.RUNNING:
+            self.context.is_paused = True
+            self._set_state(ExecutionState.PAUSED)
+            self._log("WARNING", "工作流已暂停 (按 F9 或点击恢复继续执行)")
+
+    def resume(self):
+        """Resume execution."""
+        if self.state == ExecutionState.PAUSED:
+            self.context.is_paused = False
+            self._set_state(ExecutionState.RUNNING)
+            self._log("INFO", "工作流继续执行")
+
+    def stop(self):
+        """Stop/terminate execution."""
+        if self.state in [ExecutionState.RUNNING, ExecutionState.PAUSED]:
+            self.context.is_stopped = True
+            self.context.is_paused = False
+            self._set_state(ExecutionState.STOPPED)
+            self._log("WARNING", "工作流已由用户停止")
+
+    def test_single_step(self, step: StepNode, step_index: int = 0) -> ActionResult:
+        """Execute a single step for debugging/testing in isolation."""
+        self._log("INFO", f"--- 测试单步: [{step.name}] ---")
+        ctx = ExecutionContext(
+            matcher=self.matcher,
+            input_driver=InputDriver,
+            log_callback=self._log,
+            current_step_index=step_index,
+            total_steps=1,
+        )
+        action = ActionRegistry.create(step)
+        try:
+            result = action.execute(ctx)
+            if result.success:
+                self._log("SUCCESS", f"单步测试成功: {result.message}")
+            else:
+                self._log("ERROR", f"单步测试失败: {result.message}")
+            return result
+        except Exception as e:
+            msg = f"单步测试异常: {str(e)}"
+            self._log("ERROR", msg)
+            return ActionResult(success=False, message=msg)
+
+    def _run_workflow(self):
+        """Main execution loop."""
+        total_loops = self.workflow.loop_count
+        loop_counter = 0
+        overall_success = True
+
+        self._log("INFO", f"=== 工作流【{self.workflow.name}】开始执行 (共 {len(self.workflow.steps)} 步) ===")
+
+        try:
+            while not self.context.is_stopped:
+                loop_counter += 1
+                self.context.loop_index = loop_counter
+
+                self._emit("loop_progress", loop_counter, total_loops)
+                if self.signals and HAS_PYQT:
+                    try:
+                        self.signals.loop_progress.emit(loop_counter, total_loops)
+                    except Exception:
+                        pass
+
+                if total_loops > 1:
+                    self._log("INFO", f">> 第 {loop_counter}/{total_loops} 次循环开始")
+                elif total_loops == 0:
+                    self._log("INFO", f">> 第 {loop_counter} 次无限循环迭代")
+
+                # Execute steps
+                for idx, step in enumerate(self.workflow.steps):
+                    self.context.check_flow_control()
+
+                    if not step.enabled:
+                        self._log("INFO", f"步骤 #{idx + 1} [{step.name}] 已禁用，跳过")
+                        continue
+
+                    self.context.current_step_index = idx
+                    self.context.total_steps = len(self.workflow.steps)
+
+                    self._emit("step_started", idx, step.name)
+                    if self.signals and HAS_PYQT:
+                        try:
+                            self.signals.step_started.emit(idx, step.name)
+                        except Exception:
+                            pass
+
+                    action = ActionRegistry.create(step)
+                    result = action.execute(self.context)
+
+                    self._emit("step_finished", idx, result.success, result.message)
+                    if self.signals and HAS_PYQT:
+                        try:
+                            self.signals.step_finished.emit(idx, result.success, result.message)
+                        except Exception:
+                            pass
+
+                    if not result.success:
+                        on_fail = step.on_failure
+                        if isinstance(on_fail, str):
+                            try:
+                                on_fail = OnFailureAction(on_fail)
+                            except ValueError:
+                                on_fail = OnFailureAction.STOP
+
+                        if on_fail == OnFailureAction.STOP or self.workflow.stop_on_error:
+                            overall_success = False
+                            self._log("ERROR", f"步骤 #{idx + 1} 执行失败，流程终止: {result.message}")
+                            self._set_state(ExecutionState.ERROR)
+                            self._emit("execution_finished", False, f"步骤 #{idx + 1} 失败: {result.message}")
+                            if self.signals and HAS_PYQT:
+                                try:
+                                    self.signals.execution_finished.emit(False, f"步骤 #{idx + 1} 失败")
+                                except Exception:
+                                    pass
+                            return
+                        else:
+                            self._log("WARNING", f"步骤 #{idx + 1} 失败但设置为忽略并继续")
+
+                # Check loop termination
+                if total_loops > 0 and loop_counter >= total_loops:
+                    break
+
+                # Sleep between loops
+                if self.workflow.loop_interval > 0:
+                    time.sleep(self.workflow.loop_interval)
+
+            self._set_state(ExecutionState.COMPLETED)
+            self._log("SUCCESS", f"=== 工作流【{self.workflow.name}】执行完毕 (完成 {loop_counter} 次循环) ===")
+            self._emit("execution_finished", overall_success, "执行完成")
+            if self.signals and HAS_PYQT:
+                try:
+                    self.signals.execution_finished.emit(overall_success, "执行完成")
+                except Exception:
+                    pass
+
+        except InterruptedError:
+            self._set_state(ExecutionState.STOPPED)
+            self._log("WARNING", "工作流已停止")
+            self._emit("execution_finished", False, "用户手动停止")
+            if self.signals and HAS_PYQT:
+                try:
+                    self.signals.execution_finished.emit(False, "用户手动停止")
+                except Exception:
+                    pass
+        except Exception as e:
+            self._set_state(ExecutionState.ERROR)
+            self._log("ERROR", f"工作流发生未捕获异常: {str(e)}")
+            self._emit("execution_finished", False, str(e))
+            if self.signals and HAS_PYQT:
+                try:
+                    self.signals.execution_finished.emit(False, str(e))
+                except Exception:
+                    pass

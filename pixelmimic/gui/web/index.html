@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PixelMimic - 桌面可视化自动化大师</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <!-- ==================== Top Header & Main Toolbar ==================== -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="brand-logo">
+        <span class="brand-icon">🤖</span>
+        <span>PixelMimic</span>
+      </div>
+      <div class="workflow-title-wrapper" title="点击可修改当前工作流名称">
+        <span style="font-size: 13px;">📝</span>
+        <input type="text" id="workflowTitleInput" class="workflow-title-input" value="新工作流" />
+      </div>
+      <span id="fileStatusBadge" class="file-status-badge">未保存</span>
+    </div>
+
+    <div class="header-center">
+      <button id="btnNew" class="btn btn-secondary" title="新建工作流 (Ctrl+N)">
+        <span id="iconNew"></span> 新建
+      </button>
+      <button id="btnOpen" class="btn btn-secondary" title="打开工作流 (Ctrl+O)">
+        <span id="iconOpen"></span> 打开
+      </button>
+      <button id="btnSave" class="btn btn-secondary" title="保存工作流 (Ctrl+S)">
+        <span id="iconSave"></span> 保存
+      </button>
+    </div>
+
+    <div class="header-right">
+      <button id="btnRun" class="btn btn-success" title="启动执行 (快捷键 F8)">
+        <span id="iconRun"></span> 启动运行 (F8)
+      </button>
+      <button id="btnPause" class="btn btn-warning" title="暂停/继续 (快捷键 F9)" disabled>
+        <span id="iconPause"></span> 暂停 (F9)
+      </button>
+      <button id="btnStop" class="btn btn-danger" title="紧急停止 (快捷键 F10)" disabled>
+        <span id="iconStop"></span> 停止 (F10)
+      </button>
+      <div style="width: 1px; height: 20px; background: var(--border-subtle); margin: 0 4px;"></div>
+      <button id="btnSnipGlobal" class="btn btn-secondary" title="全屏截取目标图片 (快捷键 F7)">
+        <span id="iconSnip"></span> 截屏 (F7)
+      </button>
+      <button id="btnSettings" class="btn btn-secondary btn-icon-only" title="首选项设置">
+        <span id="iconSettings"></span>
+      </button>
+      <button id="btnHelp" class="btn btn-secondary btn-icon-only" title="关于与帮助">
+        <span id="iconHelp"></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ==================== Quick Action Palette Bar ==================== -->
+  <div class="action-palette-bar">
+    <span class="palette-label">➕ 常用操作:</span>
+    <button class="palette-item-btn" onclick="PixelMimicApp.quickAddStep('image_click')">
+      <span class="icon">🎯</span> 找图点击
+    </button>
+    <button class="palette-item-btn" onclick="PixelMimicApp.quickAddStep('mouse_click')">
+      <span class="icon">🖱️</span> 坐标点击
+    </button>
+    <button class="palette-item-btn" onclick="PixelMimicApp.quickAddStep('type_text')">
+      <span class="icon">⌨️</span> 输入文字
+    </button>
+    <button class="palette-item-btn" onclick="PixelMimicApp.quickAddStep('hotkey')">
+      <span class="icon">⚡</span> 组合快捷键
+    </button>
+    <button class="palette-item-btn" onclick="PixelMimicApp.quickAddStep('wait_time')">
+      <span class="icon">⏱️</span> 等待延时
+    </button>
+    <button class="palette-item-btn" onclick="PixelMimicApp.quickAddStep('mouse_drag')">
+      <span class="icon">↔️</span> 鼠标拖拽
+    </button>
+    <button class="palette-item-btn" onclick="PixelMimicApp.quickAddStep('mouse_longpress')">
+      <span class="icon">⏳</span> 鼠标长按
+    </button>
+    <button class="palette-item-btn" onclick="PixelMimicApp.quickAddStep('image_wait')">
+      <span class="icon">👁️</span> 等待图像
+    </button>
+  </div>
+
+  <!-- ==================== Main Workspace Layout ==================== -->
+  <main class="main-workspace">
+    <!-- Left: Step Flow List -->
+    <section class="panel-steps">
+      <div class="panel-header">
+        <div class="panel-title">
+          <span>📋 自动化步骤流</span>
+          <span id="stepCountBadge" class="panel-badge">0 步</span>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button id="btnClearSteps" class="btn btn-secondary btn-icon-only" title="清空全部步骤" style="font-size: 12px; padding: 4px 8px;">
+            清空
+          </button>
+        </div>
+      </div>
+
+      <div id="stepListContainer" class="steps-scroll-container">
+        <!-- Empty State Onboarding will render here if 0 steps -->
+      </div>
+    </section>
+
+    <!-- Right: Property Inspector -->
+    <section class="panel-inspector">
+      <div class="panel-header">
+        <div class="panel-title">
+          <span>🛠️ 步骤属性配置</span>
+          <span id="selectedStepBadge" class="panel-badge">未选中</span>
+        </div>
+      </div>
+
+      <div id="inspectorContainer" class="inspector-body">
+        <!-- Inspector form rendered dynamically -->
+      </div>
+    </section>
+  </main>
+
+  <!-- ==================== Bottom Console & Log Viewer ==================== -->
+  <section class="bottom-console-container">
+    <div class="console-header">
+      <div class="console-tabs">
+        <span class="console-tab">📄 运行日志</span>
+      </div>
+      <div class="console-actions">
+        <label class="toggle-switch-label" style="font-size: 11px; color: var(--text-muted);">
+          <input type="checkbox" id="autoScrollCheck" checked /> 自动滚动
+        </label>
+        <button id="btnClearLogs" class="btn btn-secondary" style="font-size: 11px; padding: 2px 8px;">
+          清空日志
+        </button>
+      </div>
+    </div>
+
+    <div id="logConsole" class="log-scroll-area">
+      <!-- Logs will append here -->
+    </div>
+  </section>
+
+  <!-- ==================== Bottom Status Bar ==================== -->
+  <footer class="status-bar">
+    <div class="status-left">
+      <div class="status-item">
+        <div id="statusDot" class="status-indicator-dot"></div>
+        <span id="statusStateText">就绪</span>
+      </div>
+      <div class="status-item">
+        <span>循环: <b id="statusLoopText" style="color: var(--text-primary);">1/1</b></span>
+      </div>
+    </div>
+
+    <div class="status-right">
+      <div class="status-item">
+        <span>🖱️ 实时光标: <b id="statusCursorPos" style="color: var(--color-cyan);">X: 0, Y: 0</b></span>
+      </div>
+      <div class="status-item">
+        <span>F7: 截屏 | F8: 运行 | F9: 暂停 | F10: 停止</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ==================== Global Settings Modal ==================== -->
+  <div id="settingsModal" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <span class="modal-title">⚙️ 全局运行设置</span>
+        <button class="step-action-btn" onclick="PixelMimicApp.closeModal('settingsModal')"><span id="iconCloseSettings"></span></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">🔁 循环执行次数 (0 为无限循环)</label>
+          <input type="number" id="settingLoopCount" class="form-input" min="0" max="9999" value="1" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">⏱️ 每次循环间隔时间 (秒)</label>
+          <input type="number" id="settingLoopInterval" class="form-input" min="0" step="0.1" value="1.0" />
+        </div>
+        <div class="form-group">
+          <label class="toggle-switch-label">
+            <input type="checkbox" id="settingMinimizeOnRun" checked />
+            <span>启动时自动最小化主窗口 (便于自动化操作)</span>
+          </label>
+        </div>
+        <div class="form-group">
+          <label class="toggle-switch-label">
+            <input type="checkbox" id="settingFailsafe" checked />
+            <span>启用鼠标四角急停保护 (FailSafe)</span>
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="PixelMimicApp.closeModal('settingsModal')">取消</button>
+        <button class="btn btn-primary" onclick="PixelMimicApp.saveGlobalSettings()">保存设置</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== About Modal ==================== -->
+  <div id="aboutModal" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <span class="modal-title">🤖 关于 PixelMimic</span>
+        <button class="step-action-btn" onclick="PixelMimicApp.closeModal('aboutModal')"><span id="iconCloseAbout"></span></button>
+      </div>
+      <div class="modal-body" style="line-height: 1.6; font-size: 13px;">
+        <h3 style="color: #ffffff; margin-bottom: 8px;">PixelMimic (像素拟人 / 桌面可视化自动化大师) v2.0</h3>
+        <p style="color: var(--text-secondary);">基于 <b>Python 3.10+</b>、<b>PyWebView (Edge WebView2)</b> 与 <b>OpenCV</b> 打造的现代化桌面可视化自动化操作工具。</p>
+        <div style="background: var(--bg-input); padding: 12px; border-radius: var(--radius-md); margin-top: 10px;">
+          <p>🌟 <b>零门槛积木化编排</b>：像读故事一样看懂每一个操作步骤。</p>
+          <p>🎯 <b>秒级截屏图像识别</b>：OpenCV 模板匹配，多尺度高分屏自适应。</p>
+          <p>⚡ <b>全局热键保护</b>：F7 全屏取样、F8 运行、F9 暂停、F10 紧急急停。</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="PixelMimicApp.closeModal('aboutModal')">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="js/icons.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
