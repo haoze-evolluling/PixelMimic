@@ -3,7 +3,6 @@ Global hotkey listener using pynput.
 """
 
 from __future__ import annotations
-import threading
 from typing import Callable, Dict, Optional
 from pynput import keyboard
 

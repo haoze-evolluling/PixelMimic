@@ -6,7 +6,7 @@ from __future__ import annotations
 from collections import defaultdict
 import threading
 import time
-from typing import Any, Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional
 
 from pixelmimic.core.actions import ActionRegistry
 from pixelmimic.core.actions.base import ExecutionContext

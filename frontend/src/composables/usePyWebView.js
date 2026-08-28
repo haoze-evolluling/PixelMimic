@@ -1,6 +1,3 @@
-import { ref } from 'vue'
-
-const isApiReady = ref(false)
 const eventListeners = new Map()
 
 export function usePyWebView() {
@@ -46,34 +43,29 @@ export function usePyWebView() {
       }
 
       if (window.pywebview && window.pywebview.api) {
-        isApiReady.value = true
         resolve(window.pywebview.api)
         return
       }
 
-      const onReady = () => {
-        isApiReady.value = true
+      // Whichever of the two paths fires first wins; the other cleans up after itself
+      let settled = false
+      const resolveOnce = (api) => {
+        if (settled) return
+        settled = true
         window.removeEventListener('pywebviewready', onReady)
-        resolve(window.pywebview?.api || null)
+        clearTimeout(fallbackTimer)
+        resolve(api)
       }
-
+      const onReady = () => resolveOnce(window.pywebview?.api || null)
       window.addEventListener('pywebviewready', onReady)
 
-      // Fallback timeout polling
-      setTimeout(() => {
-        if (window.pywebview && window.pywebview.api) {
-          isApiReady.value = true
-          resolve(window.pywebview.api)
-        } else {
-          // Dev mode fallback
-          resolve(null)
-        }
+      const fallbackTimer = setTimeout(() => {
+        resolveOnce(window.pywebview?.api || null)
       }, 500)
     })
   }
 
   return {
-    isApiReady,
     getApi,
     initPyWebView,
     registerEventListener,

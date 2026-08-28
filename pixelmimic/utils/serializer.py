@@ -36,18 +36,3 @@ class WorkflowSerializer:
         except Exception as e:
             print(f"[serializer] Error loading workflow from {file_path}: {e}")
             return None
-
-    @staticmethod
-    def to_json_str(workflow: Workflow) -> str:
-        """Export workflow as JSON string."""
-        return json.dumps(workflow.to_dict(), ensure_ascii=False, indent=2)
-
-    @staticmethod
-    def from_json_str(json_str: str) -> Optional[Workflow]:
-        """Import workflow from JSON string."""
-        try:
-            data = json.loads(json_str)
-            return Workflow.from_dict(data)
-        except Exception as e:
-            print(f"[serializer] Error parsing workflow JSON: {e}")
-            return None

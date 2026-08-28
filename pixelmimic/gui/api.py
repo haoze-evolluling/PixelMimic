@@ -6,14 +6,11 @@ Exposes Python backend services and real-time events to the web frontend.
 from __future__ import annotations
 import json
 import os
-import threading
 import time
-from typing import Any, Dict, List, Optional
-import webbrowser
+from typing import Any, Dict, Optional
 import cv2
 import webview
 
-from pixelmimic.core.actions import ActionRegistry
 from pixelmimic.core.engine import ExecutionEngine
 from pixelmimic.core.hotkeys import HotkeyManager
 from pixelmimic.core.matcher import ImageMatcher
@@ -22,9 +19,7 @@ from pixelmimic.core.models import (
     ActionType,
     ClickType,
     ExecutionState,
-    MatchMethod,
     MouseButton,
-    OnFailureAction,
     StepNode,
     TargetType,
     Workflow,
@@ -55,10 +50,8 @@ class PyWebViewApi:
             "loop_interval": 1.0,
             "minimize_on_run": True,
             "failsafe": True,
-            "auto_scroll_logs": True,
         }
 
-        self._is_tracking: bool = False
         self._setup_engine_listeners()
         self._setup_hotkeys()
 
@@ -296,14 +289,6 @@ class PyWebViewApi:
         self._engine.start()
         return {"success": True}
 
-    def pause_workflow(self) -> Dict[str, Any]:
-        self._engine.pause()
-        return {"success": True, "state": self._engine.state.value}
-
-    def resume_workflow(self) -> Dict[str, Any]:
-        self._engine.resume()
-        return {"success": True, "state": self._engine.state.value}
-
     def toggle_pause(self) -> Dict[str, Any]:
         if self._engine.state == ExecutionState.RUNNING:
             self._engine.pause()
@@ -442,29 +427,8 @@ class PyWebViewApi:
             "fileName": "新手示例流程.pmflow",
         }
 
-    def minimize_window(self):
-        if self._window:
-            self._window.minimize()
-
-    def restore_window(self):
-        if self._window:
-            self._window.restore()
-
     def close_window(self):
-        self._is_tracking = False
         self._hotkey_mgr.stop()
         self._engine.stop()
         if self._window:
             self._window.destroy()
-
-    def open_url(self, url: str):
-        webbrowser.open(url)
-
-    def get_app_info(self) -> Dict[str, Any]:
-        return {
-            "name": "PixelMimic",
-            "chineseName": "像素拟人 / 桌面可视化自动化大师",
-            "version": "2.0.0",
-            "techStack": "Python 3.10+ & PyWebView (Edge WebView2) & OpenCV",
-            "github": "https://github.com",
-        }

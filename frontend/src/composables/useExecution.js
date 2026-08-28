@@ -22,6 +22,10 @@ export function useExecution() {
       message,
       time,
     })
+    // Cap the log buffer so long-running infinite loops don't grow it unbounded
+    if (logs.value.length > 500) {
+      logs.value.splice(0, logs.value.length - 500)
+    }
   }
 
   const clearLogs = () => {
@@ -92,10 +96,6 @@ export function useExecution() {
         showToast(`执行终止: ${data.message || '失败'}`, 'warning')
       }
     })
-
-    registerEventListener('cursor_moved', (data) => {
-      setCursorPos(data.x, data.y)
-    })
   }
 
   const startWorkflow = async (workflow, settings) => {
@@ -145,13 +145,10 @@ export function useExecution() {
     stepStatuses,
     logs,
     autoScroll,
-    appendLog,
     clearLogs,
     setExecutionState,
     setCursorPos,
-    setLoopProgress,
     resetStepStatuses,
-    setStepStatus,
     initEventListeners,
     startWorkflow,
     togglePause,

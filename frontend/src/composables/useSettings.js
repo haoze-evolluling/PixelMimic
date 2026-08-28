@@ -6,7 +6,6 @@ const settings = ref({
   loop_interval: 1.0,
   minimize_on_run: true,
   failsafe: true,
-  auto_scroll_logs: true,
 })
 
 export function useSettings() {

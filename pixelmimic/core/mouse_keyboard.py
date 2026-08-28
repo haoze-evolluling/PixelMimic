@@ -1,11 +1,10 @@
 """
-Low-level Mouse and Keyboard simulation driver using PyAutoGUI and PyPerClip.
+Low-level Mouse and Keyboard simulation driver using PyAutoGUI and Pyperclip.
 """
 
 from __future__ import annotations
-import math
 import time
-from typing import List, Optional, Tuple
+from typing import Optional, Tuple
 import pyautogui
 import pyperclip
 

@@ -1,5 +1,5 @@
 <script setup>
-import { Bot, X, Sparkles, Target, ShieldCheck, Github } from 'lucide-vue-next'
+import { Bot, X, Sparkles, Target, ShieldCheck } from 'lucide-vue-next'
 
 defineProps({
   isOpen: {

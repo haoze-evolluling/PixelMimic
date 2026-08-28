@@ -4,18 +4,17 @@ Base action class and execution context.
 
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import random
 import time
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Callable, Optional, Tuple
 
-from pixelmimic.core.models import ActionResult, OnFailureAction, StepNode
+from pixelmimic.core.models import ActionResult, StepNode
 
 
 @dataclass
 class ExecutionContext:
     """Shared state during workflow execution."""
-    variables: Dict[str, Any] = field(default_factory=dict)
     last_matched_pos: Optional[Tuple[int, int]] = None
     last_matched_confidence: Optional[float] = None
     loop_index: int = 0

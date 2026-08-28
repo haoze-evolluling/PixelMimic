@@ -16,11 +16,8 @@ import {
   GitBranch,
   Navigation,
   ChevronDown,
-  Sparkles,
-  Layers,
   Keyboard,
   Workflow as WorkflowIcon,
-  Check,
 } from 'lucide-vue-next'
 
 const { quickAddStep } = useWorkflow()

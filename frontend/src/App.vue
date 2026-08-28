@@ -42,6 +42,11 @@ const isSettingsOpen = ref(false)
 const isAboutOpen = ref(false)
 
 const handleKeyDown = (e) => {
+  // Skip shortcuts while typing in form fields (same guard as WorkflowCanvas)
+  const tag = e.target.tagName
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
+    return
+  }
   if (e.ctrlKey && (e.key === 's' || e.key === 'S')) {
     e.preventDefault()
     saveWorkflow()
@@ -66,8 +71,18 @@ const handleKeyDown = (e) => {
   }
 }
 
+// Coalesce mousemove into one cursorPos write per frame
+let moveRafId = 0
+let lastMouseX = 0
+let lastMouseY = 0
 const handleMouseMove = (e) => {
-  setCursorPos(e.screenX, e.screenY)
+  lastMouseX = e.screenX
+  lastMouseY = e.screenY
+  if (moveRafId) return
+  moveRafId = requestAnimationFrame(() => {
+    moveRafId = 0
+    setCursorPos(lastMouseX, lastMouseY)
+  })
 }
 
 onMounted(async () => {
@@ -99,6 +114,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  if (moveRafId) cancelAnimationFrame(moveRafId)
   window.removeEventListener('keydown', handleKeyDown)
   window.removeEventListener('mousemove', handleMouseMove)
 })

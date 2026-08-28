@@ -1,9 +1,10 @@
-import { ref, computed, reactive } from 'vue'
+import { ref, computed, reactive, toRaw } from 'vue'
 import { usePyWebView } from './usePyWebView'
 import { useToast } from './useToast'
 import { useExecution } from './useExecution'
 
-const workflow = reactive({
+// 模块级单例工作流（导出仅供 devMock 在纯浏览器调试时注入数据）
+export const workflow = reactive({
   id: 'wf-1',
   name: '新工作流',
   description: '',
@@ -21,7 +22,7 @@ const edgeStyle = ref('orthogonal') // 'orthogonal' | 'bezier'
 export function useWorkflow() {
   const { getApi, registerEventListener } = usePyWebView()
   const { showToast } = useToast()
-  const { resetStepStatuses } = useExecution()
+  const { resetStepStatuses, stepStatuses } = useExecution()
 
   const selectedStep = computed(() => {
     if (selectedStepIndex.value >= 0 && selectedStepIndex.value < workflow.steps.length) {
@@ -37,14 +38,19 @@ export function useWorkflow() {
     return '未保存'
   })
 
-  const syncWorkflow = async () => {
+  // Debounced sync: typing and node dragging call this every keystroke/frame,
+  // and each call ships the whole workflow (incl. base64 images) over IPC.
+  let syncTimer = null
+  const syncWorkflow = () => {
     const api = getApi()
     if (!api) return
-    try {
-      await api.update_workflow(workflow)
-    } catch (e) {
-      console.error('Sync workflow error:', e)
-    }
+    if (syncTimer !== null) clearTimeout(syncTimer)
+    syncTimer = setTimeout(() => {
+      syncTimer = null
+      api.update_workflow(workflow).catch((e) => {
+        console.error('Sync workflow error:', e)
+      })
+    }, 300)
   }
 
   const selectStep = (index) => {
@@ -156,29 +162,15 @@ export function useWorkflow() {
   const autoLayoutNodes = () => {
     if (!workflow.steps || workflow.steps.length === 0) return
 
-    // Position root and sequential flow horizontally with branch offsets
-    let curX = 80
-    let curY = 160
-    const startY = 160
+    // 统一网格行布局：按步骤顺序从左到右排列，间距为连线走廊和标签留足空间，
+    // 回跳/分支连线由 edgeRouting 的通道错位算法自动分层避让
+    const startX = 80
+    const rowY = 160
+    const spacing = 320 // 节点宽 220 + 100 间隙
 
     workflow.steps.forEach((step, idx) => {
-      if (idx === 0) {
-        step.node_x = curX
-        step.node_y = curY
-        curX += 280
-      } else {
-        const prevStep = workflow.steps[idx - 1]
-        if (prevStep.action_type === 'condition') {
-          // If previous was condition, place next sequential step
-          step.node_x = curX
-          step.node_y = curY
-          curX += 280
-        } else {
-          step.node_x = curX
-          step.node_y = startY
-          curX += 280
-        }
-      }
+      step.node_x = startX + idx * spacing
+      step.node_y = rowY
     })
 
     syncWorkflow()
@@ -284,6 +276,18 @@ export function useWorkflow() {
 
   const deleteStep = (index) => {
     workflow.steps.splice(index, 1)
+    // Shift run statuses after the deleted index down by one so they stay
+    // aligned with the remaining steps
+    delete stepStatuses[index]
+    Object.keys(stepStatuses)
+      .map(Number)
+      .sort((a, b) => a - b)
+      .forEach((i) => {
+        if (i > index) {
+          stepStatuses[i - 1] = stepStatuses[i]
+          delete stepStatuses[i]
+        }
+      })
     if (selectedStepIndex.value >= workflow.steps.length) {
       selectedStepIndex.value = workflow.steps.length - 1
     }
@@ -292,7 +296,7 @@ export function useWorkflow() {
 
   const duplicateStep = (index) => {
     const orig = workflow.steps[index]
-    const clone = JSON.parse(JSON.stringify(orig))
+    const clone = structuredClone(toRaw(orig))
     clone.id = 'step-' + Date.now() + '-' + Math.floor(Math.random() * 1000)
     clone.name = clone.name + ' (副本)'
     workflow.steps.splice(index + 1, 0, clone)

@@ -14,7 +14,6 @@ class TestPyWebViewApi(unittest.TestCase):
 
     def tearDown(self):
         self.api._engine.stop()
-        self.api._is_tracking = False
         self.api._hotkey_mgr.stop()
 
     def test_get_initial_data(self):

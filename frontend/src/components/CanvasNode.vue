@@ -22,7 +22,6 @@ import {
   Sparkles,
   Image as ImageIcon,
 } from 'lucide-vue-next'
-import { getNaturalDescription } from '../utils/naturalLanguage'
 
 const props = defineProps({
   step: {
@@ -54,7 +53,6 @@ const emit = defineEmits([
   'delete',
   'duplicate',
   'test',
-  'toggle-enable',
 ])
 
 const isCondition = computed(() => props.step.action_type === 'condition')
@@ -101,8 +99,6 @@ const iconComponent = computed(() => {
   return map[props.step.action_type] || Sparkles
 })
 
-const naturalDesc = computed(() => getStepNaturalDescription(props.step))
-
 const handleNodePointerDown = (e) => {
   // Ignore clicks on buttons or sockets
   if (e.target.closest('.port-socket') || e.target.closest('.node-action-btn') || e.target.closest('.toggle-switch')) {
@@ -143,7 +139,6 @@ const handlePortPointerDown = (e, portType) => {
     <div
       class="port-socket port-input"
       :data-step-index="index"
-      data-port-type="input"
       title="输入端口：接收前序执行信号"
     >
       <div class="port-dot"></div>
@@ -245,7 +240,6 @@ const handlePortPointerDown = (e, portType) => {
       <div
         class="port-socket port-output port-true"
         :data-step-index="index"
-        data-port-type="then"
         title="成立分支 (True)：拖拽连线至条件成立时跳转的步骤"
         @pointerdown="handlePortPointerDown($event, 'then')"
       >
@@ -256,7 +250,6 @@ const handlePortPointerDown = (e, portType) => {
       <div
         class="port-socket port-output port-false"
         :data-step-index="index"
-        data-port-type="else"
         title="不成立分支 (False)：拖拽连线至条件不成立时跳转的步骤"
         @pointerdown="handlePortPointerDown($event, 'else')"
       >
@@ -270,7 +263,6 @@ const handlePortPointerDown = (e, portType) => {
       <div
         class="port-socket port-output port-next"
         :data-step-index="index"
-        data-port-type="next"
         title="输出端口：拖拽连线至下一步骤"
         @pointerdown="handlePortPointerDown($event, 'next')"
       >

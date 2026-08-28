@@ -19,12 +19,8 @@ import {
   ImageIcon,
   ArrowRight,
   Sliders,
-  ArrowUpDown,
   GitBranch,
   Navigation,
-  CornerDownRight,
-  CheckCircle2,
-  XCircle,
 } from 'lucide-vue-next'
 
 const {

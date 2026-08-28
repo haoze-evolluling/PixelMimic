@@ -11,8 +11,6 @@ import mss
 import numpy as np
 from PIL import ImageGrab
 
-from pixelmimic.utils.image_utils import base64_to_cv2
-
 
 @dataclass
 class MatchResult:
@@ -160,6 +158,14 @@ class ImageMatcher:
         else:
             template_bgr = template
 
+        # Expensive color conversions are done once instead of per scale
+        if use_grayscale:
+            src = cv2.cvtColor(screen_img, cv2.COLOR_BGR2GRAY) if len(screen_img.shape) == 3 else screen_img
+            template_base = cv2.cvtColor(template_bgr, cv2.COLOR_BGR2GRAY) if len(template_bgr.shape) == 3 else template_bgr
+        else:
+            src = screen_img
+            template_base = template_bgr
+
         for scale in scales:
             scaled_w = int(tw * scale)
             scaled_h = int(th * scale)
@@ -167,30 +173,41 @@ class ImageMatcher:
                 continue
 
             if scale != 1.0:
-                scaled_template = cv2.resize(template_bgr, (scaled_w, scaled_h), interpolation=cv2.INTER_AREA)
-                scaled_mask = cv2.resize(mask, (scaled_w, scaled_h), interpolation=cv2.INTER_NEAREST) if mask is not None else None
+                tpl = cv2.resize(template_base, (scaled_w, scaled_h), interpolation=cv2.INTER_AREA)
+                msk = cv2.resize(mask, (scaled_w, scaled_h), interpolation=cv2.INTER_NEAREST) if mask is not None else None
             else:
-                scaled_template = template_bgr
-                scaled_mask = mask
+                tpl = template_base
+                msk = mask
 
-            if use_grayscale:
-                src_gray = cv2.cvtColor(screen_img, cv2.COLOR_BGR2GRAY) if len(screen_img.shape) == 3 else screen_img
-                tpl_gray = cv2.cvtColor(scaled_template, cv2.COLOR_BGR2GRAY) if len(scaled_template.shape) == 3 else scaled_template
-                if scaled_mask is not None:
-                    res = cv2.matchTemplate(src_gray, tpl_gray, method, mask=scaled_mask)
-                else:
-                    res = cv2.matchTemplate(src_gray, tpl_gray, method)
+            if msk is not None:
+                res = cv2.matchTemplate(src, tpl, method, mask=msk)
             else:
-                if scaled_mask is not None:
-                    res = cv2.matchTemplate(screen_img, scaled_template, method, mask=scaled_mask)
-                else:
-                    res = cv2.matchTemplate(screen_img, scaled_template, method)
+                res = cv2.matchTemplate(src, tpl, method)
 
             if method == cv2.TM_SQDIFF_NORMED:
                 # For SQDIFF, 0 is perfect match, convert to similarity score
                 similarity = 1.0 - res
             else:
                 similarity = res
+
+            if max_results == 1:
+                # Fast path: only the best location is needed
+                _, best_score, _, best_loc = cv2.minMaxLoc(similarity)
+                if best_score >= confidence:
+                    match_x = int(best_loc[0] + offset_x)
+                    match_y = int(best_loc[1] + offset_y)
+                    all_matches.append(
+                        MatchResult(
+                            x=match_x,
+                            y=match_y,
+                            width=scaled_w,
+                            height=scaled_h,
+                            center_x=match_x + scaled_w // 2,
+                            center_y=match_y + scaled_h // 2,
+                            confidence=best_score,
+                        )
+                    )
+                continue
 
             # Find locations exceeding confidence threshold
             loc = np.where(similarity >= confidence)
