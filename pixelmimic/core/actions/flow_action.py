@@ -34,10 +34,13 @@ class WaitTimeAction(BaseAction):
 
 
 class ConditionAction(BaseAction):
-    """Checks a condition (e.g. image exists on screen)."""
+    """Evaluates conditions (e.g. image exists / not exists) and directs workflow branching."""
 
     def execute_core(self, context: ExecutionContext) -> ActionResult:
-        # Check if template image exists
+        cond_type = getattr(self.step, "condition_type", "image_exists") or "image_exists"
+        image_found = False
+        confidence = 0.0
+
         if self.step.image_base64:
             template = base64_to_cv2(self.step.image_base64)
             if template is not None:
@@ -50,9 +53,48 @@ class ConditionAction(BaseAction):
                     use_grayscale=self.step.use_grayscale,
                     multi_scale=self.step.multi_scale,
                 )
-                exists = match is not None
-                msg = f"条件判断: 图像{'存在' if exists else '不存在'} (置信度: {match.confidence if match else 0.0:.2f})"
-                context.log(msg, level="INFO")
-                return ActionResult(success=exists, message=msg, data={"condition_met": exists})
+                if match is not None:
+                    image_found = True
+                    confidence = match.confidence
+        else:
+            context.log("警告: 条件判断步骤未设置目标图片，默认判定图像不存在", level="WARNING")
 
-        return ActionResult(success=True, message="默认条件通过")
+        if cond_type == "image_not_exists":
+            condition_met = not image_found
+            cond_desc = "图像不存在"
+        else:
+            condition_met = image_found
+            cond_desc = "图像存在"
+
+        # Determine branch directive
+        if condition_met:
+            branch_action = getattr(self.step, "then_action", "continue") or "continue"
+            jump_step = int(getattr(self.step, "then_jump_step", 1) or 1)
+            skip_count = int(getattr(self.step, "then_skip_count", 1) or 1)
+        else:
+            branch_action = getattr(self.step, "else_action", "continue") or "continue"
+            jump_step = int(getattr(self.step, "else_jump_step", 1) or 1)
+            skip_count = int(getattr(self.step, "else_skip_count", 1) or 1)
+
+        action_desc_map = {
+            "continue": "继续执行下一步",
+            "jump": f"跳转至第 {jump_step} 步",
+            "skip": f"跳过后续 {skip_count} 步",
+            "stop": "终止流程",
+        }
+        action_text = action_desc_map.get(branch_action, "继续执行下一步")
+        met_str = "【成立】" if condition_met else "【不成立】"
+        msg = f"条件判断 ({cond_desc}): 判定为{met_str} (置信度: {confidence:.2f}) -> {action_text}"
+        context.log(msg, level="INFO")
+
+        return ActionResult(
+            success=True,
+            message=msg,
+            data={
+                "condition_met": condition_met,
+                "branch_action": branch_action,
+                "jump_step": jump_step,
+                "skip_count": skip_count,
+                "confidence": confidence,
+            },
+        )

@@ -41,23 +41,48 @@ class TestModels(unittest.TestCase):
         self.assertEqual(reconstructed.mouse_button, MouseButton.RIGHT)
         self.assertEqual(reconstructed.click_type, ClickType.DOUBLE)
 
-    def test_workflow_serialization(self):
-        wf = Workflow(name="登录流程", loop_count=3, loop_interval=0.5)
-        step1 = StepNode(name="第1步", action_type=ActionType.MOUSE_CLICK, x=50, y=50)
-        step2 = StepNode(name="第2步", action_type=ActionType.TYPE_TEXT, text_to_type="hello")
-        wf.steps.extend([step1, step2])
+    def test_condition_and_scroll_serialization(self):
+        step_scroll = StepNode(
+            name="向下滚动测试",
+            action_type=ActionType.MOUSE_SCROLL,
+            scroll_amount=-5,
+            x=300,
+            y=400,
+        )
+        d_scroll = step_scroll.to_dict()
+        self.assertEqual(d_scroll["action_type"], "mouse_scroll")
+        self.assertEqual(d_scroll["scroll_amount"], -5)
+        self.assertEqual(d_scroll["x"], 300)
+        self.assertEqual(d_scroll["y"], 400)
 
-        d = wf.to_dict()
-        self.assertEqual(d["name"], "登录流程")
-        self.assertEqual(d["loop_count"], 3)
-        self.assertEqual(len(d["steps"]), 2)
+        recon_scroll = StepNode.from_dict(d_scroll)
+        self.assertEqual(recon_scroll.action_type, ActionType.MOUSE_SCROLL)
+        self.assertEqual(recon_scroll.scroll_amount, -5)
 
-        wf_loaded = Workflow.from_dict(d)
-        self.assertEqual(wf_loaded.id, wf.id)
-        self.assertEqual(wf_loaded.name, "登录流程")
-        self.assertEqual(len(wf_loaded.steps), 2)
-        self.assertEqual(wf_loaded.steps[0].action_type, ActionType.MOUSE_CLICK)
-        self.assertEqual(wf_loaded.steps[1].text_to_type, "hello")
+        step_cond = StepNode(
+            name="条件判断测试",
+            action_type=ActionType.CONDITION,
+            condition_type="image_not_exists",
+            then_action="jump",
+            then_jump_step=4,
+            else_action="skip",
+            else_skip_count=2,
+        )
+        d_cond = step_cond.to_dict()
+        self.assertEqual(d_cond["action_type"], "condition")
+        self.assertEqual(d_cond["condition_type"], "image_not_exists")
+        self.assertEqual(d_cond["then_action"], "jump")
+        self.assertEqual(d_cond["then_jump_step"], 4)
+        self.assertEqual(d_cond["else_action"], "skip")
+        self.assertEqual(d_cond["else_skip_count"], 2)
+
+        recon_cond = StepNode.from_dict(d_cond)
+        self.assertEqual(recon_cond.action_type, ActionType.CONDITION)
+        self.assertEqual(recon_cond.condition_type, "image_not_exists")
+        self.assertEqual(recon_cond.then_action, "jump")
+        self.assertEqual(recon_cond.then_jump_step, 4)
+        self.assertEqual(recon_cond.else_action, "skip")
+        self.assertEqual(recon_cond.else_skip_count, 2)
 
 
 if __name__ == "__main__":

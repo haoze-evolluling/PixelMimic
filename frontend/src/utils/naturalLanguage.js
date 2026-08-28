@@ -44,12 +44,60 @@ export function getNaturalDescription(step) {
         type: 'text',
         text: `从 (${step.x || 0}, ${step.y || 0}) 平滑拖拽至 (${step.drag_to_x || 0}, ${step.drag_to_y || 0}) (耗时 ${step.drag_duration || 0.5}s)`,
       }
-    case 'mouse_scroll': {
-      const amt = step.scroll_amount || 0
-      const dir = amt >= 0 ? `向上滚动 ${amt} 格` : `向下滚动 ${Math.abs(amt)} 格`
+    case 'mouse_move':
       return {
         type: 'text',
-        text: `鼠标滚轮 ${dir}`,
+        text: `移动鼠标至坐标 (X: ${step.x || 0}, Y: ${step.y || 0})`,
+      }
+    case 'image_drag': {
+      if (step.image_base64) {
+        return {
+          type: 'image_click',
+          prefix: '识别目标图像并拖拽至',
+          action: `(${step.drag_to_x || 0}, ${step.drag_to_y || 0})`,
+          hasImage: true,
+          image: `data:image/png;base64,${step.image_base64}`,
+        }
+      }
+      return {
+        type: 'text',
+        text: `识别目标图像 [未设置图片] 并拖拽至 (${step.drag_to_x || 0}, ${step.drag_to_y || 0})`,
+      }
+    }
+    case 'mouse_scroll': {
+      const amt = step.scroll_amount !== undefined ? step.scroll_amount : -3
+      const dir = amt >= 0 ? `向上滚动 ${amt} 格` : `向下滚动 ${Math.abs(amt)} 格`
+      const hasPos = (step.x > 0 || step.y > 0)
+      const posText = hasPos ? `在坐标 (${step.x || 0}, ${step.y || 0}) ` : '在当前位置 '
+      return {
+        type: 'text',
+        text: `${posText}鼠标滚轮${dir}`,
+      }
+    }
+    case 'condition': {
+      const formatBranch = (act, jump, skip) => {
+        if (act === 'jump') return `跳转至第 ${jump || 1} 步`
+        if (act === 'skip') return `跳过 ${skip || 1} 步`
+        if (act === 'stop') return '终止流程'
+        return '继续'
+      }
+      const isNot = step.condition_type === 'image_not_exists'
+      const condLabel = isNot ? '未出现目标图像' : '出现目标图像'
+      const thenText = formatBranch(step.then_action, step.then_jump_step, step.then_skip_count)
+      const elseText = formatBranch(step.else_action, step.else_jump_step, step.else_skip_count)
+
+      if (step.image_base64) {
+        return {
+          type: 'condition',
+          prefix: `条件判断 (若${isNot ? '不存在' : '存在'}`,
+          action: `): 是则[${thenText}], 否则[${elseText}]`,
+          hasImage: true,
+          image: `data:image/png;base64,${step.image_base64}`,
+        }
+      }
+      return {
+        type: 'text',
+        text: `条件判断: 若${condLabel} -> 是则[${thenText}], 否则[${elseText}]`,
       }
     }
     case 'type_text': {

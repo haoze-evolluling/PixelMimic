@@ -131,6 +131,15 @@ class StepNode:
     wait_timeout: float = 5.0              # max seconds to wait for image
     wait_for_disappear: bool = False
 
+    # Condition parameters
+    condition_type: str = "image_exists"  # "image_exists" | "image_not_exists"
+    then_action: str = "continue"         # "continue" | "jump" | "skip" | "stop"
+    then_jump_step: int = 1               # 1-indexed target step
+    then_skip_count: int = 1              # number of steps to skip
+    else_action: str = "continue"         # "continue" | "jump" | "skip" | "stop"
+    else_jump_step: int = 1
+    else_skip_count: int = 1
+
     # Timing & Retry parameters
     pre_delay: float = 0.0       # seconds before executing step
     post_delay: float = 0.2      # seconds after executing step
@@ -176,6 +185,13 @@ class StepNode:
             "search_roi": list(self.search_roi) if self.search_roi else None,
             "wait_timeout": self.wait_timeout,
             "wait_for_disappear": self.wait_for_disappear,
+            "condition_type": self.condition_type,
+            "then_action": self.then_action,
+            "then_jump_step": self.then_jump_step,
+            "then_skip_count": self.then_skip_count,
+            "else_action": self.else_action,
+            "else_jump_step": self.else_jump_step,
+            "else_skip_count": self.else_skip_count,
             "pre_delay": self.pre_delay,
             "post_delay": self.post_delay,
             "random_delay_min": self.random_delay_min,

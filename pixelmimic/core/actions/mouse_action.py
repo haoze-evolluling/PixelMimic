@@ -91,12 +91,14 @@ class MouseScrollAction(BaseAction):
     """Executes mouse wheel scroll."""
 
     def execute_core(self, context: ExecutionContext) -> ActionResult:
-        x = (self.step.x + self.step.offset_x) if self.step.x > 0 else None
-        y = (self.step.y + self.step.offset_y) if self.step.y > 0 else None
-        clicks = self.step.scroll_amount
+        has_pos = (self.step.x > 0 or self.step.y > 0)
+        x = (self.step.x + self.step.offset_x) if has_pos else None
+        y = (self.step.y + self.step.offset_y) if has_pos else None
+        clicks = self.step.scroll_amount if self.step.scroll_amount != 0 else -3
 
         InputDriver.scroll(clicks, x=x, y=y)
         direction = "向上" if clicks > 0 else "向下"
-        msg = f"鼠标滚轮{direction}滚动 {abs(clicks)} 格"
+        pos_str = f"在坐标 ({x}, {y}) " if (x is not None and y is not None) else "在当前位置 "
+        msg = f"{pos_str}鼠标滚轮{direction}滚动 {abs(clicks)} 格"
         context.log(msg, level="INFO")
-        return ActionResult(success=True, message=msg)
+        return ActionResult(success=True, message=msg, matched_pos=(x, y) if has_pos else None)

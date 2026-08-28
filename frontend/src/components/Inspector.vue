@@ -18,6 +18,13 @@ import {
   MapPin,
   ImageIcon,
   ArrowRight,
+  Sliders,
+  ArrowUpDown,
+  GitBranch,
+  Navigation,
+  CornerDownRight,
+  CheckCircle2,
+  XCircle,
 } from 'lucide-vue-next'
 
 const {
@@ -40,9 +47,24 @@ const isImageAction = computed(() => {
   return ['image_click', 'image_wait', 'image_drag'].includes(selectedStep.value.action_type)
 })
 
+const isCondition = computed(() => {
+  if (!selectedStep.value) return false
+  return selectedStep.value.action_type === 'condition'
+})
+
 const isMouseClick = computed(() => {
   if (!selectedStep.value) return false
   return ['mouse_click', 'mouse_longpress'].includes(selectedStep.value.action_type)
+})
+
+const isScroll = computed(() => {
+  if (!selectedStep.value) return false
+  return selectedStep.value.action_type === 'mouse_scroll'
+})
+
+const isMove = computed(() => {
+  if (!selectedStep.value) return false
+  return selectedStep.value.action_type === 'mouse_move'
 })
 
 const isDrag = computed(() => {
@@ -63,6 +85,29 @@ const isHotkey = computed(() => {
 const isWait = computed(() => {
   if (!selectedStep.value) return false
   return selectedStep.value.action_type === 'wait_time'
+})
+
+const scrollDirection = computed({
+  get() {
+    if (!selectedStep.value) return 'down'
+    return (selectedStep.value.scroll_amount !== undefined ? selectedStep.value.scroll_amount : -3) >= 0 ? 'up' : 'down'
+  },
+  set(val) {
+    const curMag = Math.abs(selectedStep.value?.scroll_amount || 3)
+    updateCurrentStep('scroll_amount', val === 'up' ? curMag : -curMag)
+  },
+})
+
+const scrollMagnitude = computed({
+  get() {
+    if (!selectedStep.value) return 3
+    return Math.abs(selectedStep.value.scroll_amount !== undefined ? selectedStep.value.scroll_amount : 3)
+  },
+  set(val) {
+    const dir = scrollDirection.value === 'up' ? 1 : -1
+    const mag = Math.max(1, parseInt(val) || 1)
+    updateCurrentStep('scroll_amount', dir * mag)
+  },
 })
 
 const hotkeyInputString = computed({
@@ -147,14 +192,27 @@ const commonHotkeys = [
                 :value="selectedStep.action_type"
                 @change="changeStepActionType($event.target.value)"
               >
-                <option value="image_click">找图点击</option>
-                <option value="mouse_click">坐标点击</option>
-                <option value="type_text">输入文字</option>
-                <option value="hotkey">组合快捷键</option>
-                <option value="wait_time">等待延时</option>
-                <option value="mouse_drag">鼠标拖拽</option>
-                <option value="mouse_longpress">鼠标长按</option>
-                <option value="image_wait">等待图像</option>
+                <optgroup label="图像识别">
+                  <option value="image_click">找图点击</option>
+                  <option value="image_wait">等待图像</option>
+                  <option value="image_drag">图像拖拽</option>
+                </optgroup>
+                <optgroup label="鼠标操作">
+                  <option value="mouse_click">坐标点击</option>
+                  <option value="mouse_scroll">鼠标滚轮</option>
+                  <option value="mouse_drag">鼠标拖拽</option>
+                  <option value="mouse_longpress">鼠标长按</option>
+                  <option value="mouse_move">鼠标移动</option>
+                </optgroup>
+                <optgroup label="键盘操作">
+                  <option value="type_text">输入文字</option>
+                  <option value="hotkey">组合快捷键</option>
+                  <option value="key_press">单个按键</option>
+                </optgroup>
+                <optgroup label="流程控制">
+                  <option value="wait_time">等待延时</option>
+                  <option value="condition">条件判断 (分支)</option>
+                </optgroup>
               </select>
             </div>
 
@@ -171,11 +229,11 @@ const commonHotkeys = [
           </div>
         </div>
 
-        <!-- 2. Image Configuration Section -->
-        <div v-if="isImageAction" class="prop-section-card">
+        <!-- 2. Image Configuration Section (for image actions & condition) -->
+        <div v-if="isImageAction || isCondition" class="prop-section-card">
           <div class="section-title">
             <Crosshair :size="13" class="section-icon" />
-            <span>目标图像配置</span>
+            <span>{{ isCondition ? '条件目标图片识别' : '目标图像配置' }}</span>
           </div>
 
           <div class="image-target-preview-box">
@@ -188,7 +246,7 @@ const commonHotkeys = [
             <div v-else class="target-img-placeholder">
               <ImageIcon :size="20" class="placeholder-icon" />
               <span>尚未设置目标图片</span>
-              <span class="subtext">点击下方按钮截屏或选择图片</span>
+              <span class="subtext">点击下方按钮截屏框选目标</span>
             </div>
           </div>
 
@@ -253,7 +311,226 @@ const commonHotkeys = [
           </div>
         </div>
 
-        <!-- 3. Mouse & Coordinates Section -->
+        <!-- 3. Condition Branching Configuration Section -->
+        <div v-if="isCondition" class="prop-section-card">
+          <div class="section-title">
+            <GitBranch :size="13" class="section-icon" />
+            <span>条件判断与分支流控</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">判断条件类型</label>
+            <select
+              class="form-select"
+              :value="selectedStep.condition_type || 'image_exists'"
+              @change="updateCurrentStep('condition_type', $event.target.value)"
+            >
+              <option value="image_exists">屏幕中【存在】目标图像</option>
+              <option value="image_not_exists">屏幕中【不存在】目标图像</option>
+            </select>
+          </div>
+
+          <!-- THEN branch -->
+          <div class="branch-config-box then-branch">
+            <div class="branch-title-row">
+              <span class="branch-tag branch-tag-then">IF 条件成立时</span>
+              <span class="branch-hint">当判定结果为真时执行</span>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">执行动作</label>
+                <select
+                  class="form-select"
+                  :value="selectedStep.then_action || 'continue'"
+                  @change="updateCurrentStep('then_action', $event.target.value)"
+                >
+                  <option value="continue">继续执行下一步</option>
+                  <option value="jump">跳转到指定步骤</option>
+                  <option value="skip">跳过后续步骤</option>
+                  <option value="stop">终止流程执行</option>
+                </select>
+              </div>
+
+              <div v-if="selectedStep.then_action === 'jump'" class="form-group">
+                <label class="form-label">跳转目标步骤</label>
+                <select
+                  class="form-select"
+                  :value="selectedStep.then_jump_step || 1"
+                  @change="updateCurrentStep('then_jump_step', parseInt($event.target.value) || 1)"
+                >
+                  <option
+                    v-for="(st, idx) in workflow.steps"
+                    :key="st.id || idx"
+                    :value="idx + 1"
+                  >
+                    步骤 #{{ idx + 1 }}: {{ st.name }}
+                  </option>
+                </select>
+              </div>
+
+              <div v-if="selectedStep.then_action === 'skip'" class="form-group">
+                <label class="form-label">跳过步骤数量</label>
+                <input
+                  type="number"
+                  class="form-input"
+                  min="1"
+                  max="100"
+                  :value="selectedStep.then_skip_count || 1"
+                  @input="updateCurrentStep('then_skip_count', parseInt($event.target.value) || 1)"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- ELSE branch -->
+          <div class="branch-config-box else-branch mt-sm">
+            <div class="branch-title-row">
+              <span class="branch-tag branch-tag-else">ELSE 条件不成立时</span>
+              <span class="branch-hint">当判定结果为假时执行</span>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">执行动作</label>
+                <select
+                  class="form-select"
+                  :value="selectedStep.else_action || 'continue'"
+                  @change="updateCurrentStep('else_action', $event.target.value)"
+                >
+                  <option value="continue">继续执行下一步</option>
+                  <option value="jump">跳转到指定步骤</option>
+                  <option value="skip">跳过后续步骤</option>
+                  <option value="stop">终止流程执行</option>
+                </select>
+              </div>
+
+              <div v-if="selectedStep.else_action === 'jump'" class="form-group">
+                <label class="form-label">跳转目标步骤</label>
+                <select
+                  class="form-select"
+                  :value="selectedStep.else_jump_step || 1"
+                  @change="updateCurrentStep('else_jump_step', parseInt($event.target.value) || 1)"
+                >
+                  <option
+                    v-for="(st, idx) in workflow.steps"
+                    :key="st.id || idx"
+                    :value="idx + 1"
+                  >
+                    步骤 #{{ idx + 1 }}: {{ st.name }}
+                  </option>
+                </select>
+              </div>
+
+              <div v-if="selectedStep.else_action === 'skip'" class="form-group">
+                <label class="form-label">跳过步骤数量</label>
+                <input
+                  type="number"
+                  class="form-input"
+                  min="1"
+                  max="100"
+                  :value="selectedStep.else_skip_count || 1"
+                  @input="updateCurrentStep('else_skip_count', parseInt($event.target.value) || 1)"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Mouse Scroll Section -->
+        <div v-if="isScroll" class="prop-section-card">
+          <div class="section-title">
+            <Sliders :size="13" class="section-icon" />
+            <span>鼠标滚轮滚动设置</span>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">滚动方向</label>
+              <select
+                class="form-select"
+                v-model="scrollDirection"
+              >
+                <option value="down">向下滚动 (页面下翻)</option>
+                <option value="up">向上滚动 (页面上翻)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">滚动格数 (步长)</label>
+              <input
+                type="number"
+                class="form-input"
+                min="1"
+                max="100"
+                v-model="scrollMagnitude"
+                placeholder="如: 3"
+              />
+            </div>
+          </div>
+
+          <div class="form-row mt-sm">
+            <div class="form-group">
+              <label class="form-label">指定坐标 X (0为当前位置)</label>
+              <input
+                type="number"
+                class="form-input"
+                :value="selectedStep.x || 0"
+                @input="updateCurrentStep('x', parseInt($event.target.value) || 0)"
+              />
+            </div>
+            <div class="form-group">
+              <label class="form-label">指定坐标 Y (0为当前位置)</label>
+              <input
+                type="number"
+                class="form-input"
+                :value="selectedStep.y || 0"
+                @input="updateCurrentStep('y', parseInt($event.target.value) || 0)"
+              />
+            </div>
+          </div>
+
+          <button class="btn btn-secondary full-btn" @click="pickMousePosForCurrentStep">
+            <MapPin :size="13" />
+            <span>拾取当前鼠标位置作为滚动坐标</span>
+          </button>
+        </div>
+
+        <!-- 5. Mouse Move Section -->
+        <div v-if="isMove" class="prop-section-card">
+          <div class="section-title">
+            <Navigation :size="13" class="section-icon" />
+            <span>鼠标移动目标坐标</span>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">目标坐标 X</label>
+              <input
+                type="number"
+                class="form-input"
+                :value="selectedStep.x || 0"
+                @input="updateCurrentStep('x', parseInt($event.target.value) || 0)"
+              />
+            </div>
+            <div class="form-group">
+              <label class="form-label">目标坐标 Y</label>
+              <input
+                type="number"
+                class="form-input"
+                :value="selectedStep.y || 0"
+                @input="updateCurrentStep('y', parseInt($event.target.value) || 0)"
+              />
+            </div>
+          </div>
+
+          <button class="btn btn-secondary full-btn" @click="pickMousePosForCurrentStep">
+            <MapPin :size="13" />
+            <span>拾取当前鼠标位置</span>
+          </button>
+        </div>
+
+        <!-- 6. Mouse & Coordinates Section -->
         <div v-if="isMouseClick || selectedStep.action_type === 'image_click'" class="prop-section-card">
           <div class="section-title">
             <MousePointer :size="13" class="section-icon" />
@@ -797,6 +1074,54 @@ const commonHotkeys = [
 .chip-btn {
   font-size: 10.5px;
   padding: 2px 6px;
+}
+
+/* Branch Box Styling */
+.branch-config-box {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+}
+
+.branch-config-box.then-branch {
+  border-left: 3px solid var(--color-success);
+}
+
+.branch-config-box.else-branch {
+  border-left: 3px solid var(--color-warning);
+}
+
+.branch-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.branch-tag {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.3px;
+}
+
+.branch-tag-then {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--color-success);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.branch-tag-else {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--color-warning);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.branch-hint {
+  font-size: 10.5px;
+  color: var(--text-muted);
 }
 
 /* Accordion */

@@ -21,6 +21,8 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
+  GitBranch,
+  Navigation,
 } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -57,15 +59,18 @@ const emit = defineEmits([
 const actionIcon = computed(() => {
   const map = {
     image_click: Crosshair,
+    image_wait: Eye,
+    image_drag: Move,
     mouse_click: MousePointer,
+    mouse_scroll: Sliders,
     mouse_longpress: Timer,
     mouse_drag: Move,
-    mouse_scroll: Sliders,
+    mouse_move: Navigation,
     type_text: Type,
     hotkey: Zap,
     key_press: Command,
     wait_time: Clock,
-    image_wait: Eye,
+    condition: GitBranch,
   }
   return map[props.step.action_type] || Crosshair
 })
@@ -126,7 +131,7 @@ const isDisabled = computed(() => props.step.enabled === false)
 
       <!-- Natural Language Description -->
       <div class="step-natural-desc">
-        <template v-if="naturalDesc.type === 'image_click' || naturalDesc.type === 'image_wait'">
+        <template v-if="naturalDesc.type === 'image_click' || naturalDesc.type === 'image_wait' || naturalDesc.type === 'condition'">
           <span>{{ naturalDesc.prefix }}</span>
           <img
             v-if="naturalDesc.hasImage"
@@ -134,7 +139,7 @@ const isDisabled = computed(() => props.step.enabled === false)
             class="step-thumb-mini"
             alt="目标"
           />
-          <span v-else class="step-unspecified">[未设置图片]</span>
+          <span v-else-if="naturalDesc.type !== 'condition'" class="step-unspecified">[未设置图片]</span>
           <span class="desc-highlight">{{ naturalDesc.action }}</span>
         </template>
         <template v-else>

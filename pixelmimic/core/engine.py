@@ -178,12 +178,18 @@ class ExecutionEngine:
                 elif total_loops == 0:
                     self._log("INFO", f">> 第 {loop_counter} 次无限循环迭代")
 
-                # Execute steps
-                for idx, step in enumerate(self.workflow.steps):
+                # Execute steps using index-driven loop for conditional jumping and skipping
+                idx = 0
+                while idx < len(self.workflow.steps):
+                    if self.context.is_stopped:
+                        break
+
                     self.context.check_flow_control()
 
+                    step = self.workflow.steps[idx]
                     if not step.enabled:
                         self._log("INFO", f"步骤 #{idx + 1} [{step.name}] 已禁用，跳过")
+                        idx += 1
                         continue
 
                     self.context.current_step_index = idx
@@ -227,6 +233,29 @@ class ExecutionEngine:
                             return
                         else:
                             self._log("WARNING", f"步骤 #{idx + 1} 失败但设置为忽略并继续")
+                            idx += 1
+                            continue
+
+                    # Check for branching directives from flow control (e.g. ConditionAction)
+                    branch_action = result.data.get("branch_action") if result.data else None
+                    if branch_action == "jump":
+                        jump_target = int(result.data.get("jump_step", 1)) - 1  # convert 1-based to 0-based
+                        if 0 <= jump_target < len(self.workflow.steps):
+                            self._log("INFO", f">> 流程跳转: 从步骤 #{idx + 1} 跳转到步骤 #{jump_target + 1}")
+                            idx = jump_target
+                        else:
+                            self._log("WARNING", f">> 跳转目标步骤 #{jump_target + 1} 超出范围 (总步数: {len(self.workflow.steps)})，流程结束")
+                            break
+                    elif branch_action == "skip":
+                        skip_count = int(result.data.get("skip_count", 1))
+                        next_idx = idx + 1 + skip_count
+                        self._log("INFO", f">> 流程跳过: 跳过后续 {skip_count} 步，转至步骤 #{next_idx + 1}")
+                        idx = next_idx
+                    elif branch_action == "stop":
+                        self._log("INFO", f">> 流程控制: 条件分支触发终止流程")
+                        break
+                    else:
+                        idx += 1
 
                 # Check loop termination
                 if total_loops > 0 and loop_counter >= total_loops:

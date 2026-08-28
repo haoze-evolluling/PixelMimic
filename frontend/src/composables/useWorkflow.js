@@ -56,13 +56,18 @@ export function useWorkflow() {
   const quickAddStep = (actionType) => {
     const defaultNames = {
       image_click: '找图点击',
+      image_wait: '等待图像出现',
+      image_drag: '图像拖拽',
       mouse_click: '坐标点击',
+      mouse_longpress: '鼠标长按',
+      mouse_drag: '鼠标拖拽',
+      mouse_scroll: '滚轮滚动',
+      mouse_move: '鼠标移动',
       type_text: '输入文字',
       hotkey: '组合快捷键',
+      key_press: '单个按键',
       wait_time: '等待延时',
-      mouse_drag: '鼠标拖拽',
-      mouse_longpress: '鼠标长按',
-      image_wait: '等待图像出现',
+      condition: '条件判断 (图像存在/不存在)',
     }
 
     const newStep = {
@@ -70,9 +75,9 @@ export function useWorkflow() {
       name: defaultNames[actionType] || '新步骤',
       action_type: actionType,
       enabled: true,
-      target_type: ['image_click', 'image_wait', 'image_drag'].includes(actionType) ? 'image' : 'coordinate',
-      x: 500,
-      y: 300,
+      target_type: ['image_click', 'image_wait', 'image_drag', 'condition'].includes(actionType) ? 'image' : 'coordinate',
+      x: actionType === 'mouse_scroll' ? 0 : 500,
+      y: actionType === 'mouse_scroll' ? 0 : 300,
       offset_x: 0,
       offset_y: 0,
       drag_to_x: 700,
@@ -94,6 +99,13 @@ export function useWorkflow() {
       multi_scale: false,
       wait_timeout: 5.0,
       wait_for_disappear: false,
+      condition_type: 'image_exists',
+      then_action: 'continue',
+      then_jump_step: 1,
+      then_skip_count: 1,
+      else_action: 'continue',
+      else_jump_step: 1,
+      else_skip_count: 1,
       pre_delay: actionType === 'wait_time' ? 1.0 : 0.0,
       post_delay: 0.2,
       retry_count: 1,
@@ -106,8 +118,8 @@ export function useWorkflow() {
     selectStep(workflow.steps.length - 1)
     syncWorkflow()
 
-    if (actionType === 'image_click' || actionType === 'image_wait') {
-      showToast('点击【截取目标图片】即可框选要识别的目标', 'info')
+    if (actionType === 'image_click' || actionType === 'image_wait' || actionType === 'condition') {
+      showToast('点击【截取目标】即可框选要识别的目标', 'info')
     }
   }
 
@@ -121,7 +133,7 @@ export function useWorkflow() {
   const changeStepActionType = (newType) => {
     if (!selectedStep.value) return
     selectedStep.value.action_type = newType
-    selectedStep.value.target_type = ['image_click', 'image_wait', 'image_drag'].includes(newType) ? 'image' : 'coordinate'
+    selectedStep.value.target_type = ['image_click', 'image_wait', 'image_drag', 'condition'].includes(newType) ? 'image' : 'coordinate'
     syncWorkflow()
   }
 
