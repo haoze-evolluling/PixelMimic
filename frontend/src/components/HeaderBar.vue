@@ -35,7 +35,7 @@ const handleRun = () => {
   <header class="app-header">
     <!-- Left Section -->
     <div class="header-left">
-      <div class="brand-logo" title="PixelMimic 桌面可视化自动化大师">
+      <div class="brand-logo" title="PixelMimic 所见即达，一触即成">
         <Bot class="brand-icon-svg" :size="17" />
         <span class="brand-name">PixelMimic</span>
       </div>

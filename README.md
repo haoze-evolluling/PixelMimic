@@ -1,6 +1,6 @@
-# PixelMimic (像素拟人 / 桌面可视化自动化大师)
+# PixelMimic (像素拟人)
 
-> 基于 Python、Vue 3、PyWebView 与 OpenCV 的现代化极简易用桌面端可视化自动化操作软件。
+> 所见即达，一触即成 —— 基于 Python、Vue 3、PyWebView 与 OpenCV 的现代化极简易用桌面端可视化自动化操作软件。
 
 ![PixelMimic](https://img.shields.io/badge/Python-3.10%2B-blue.svg)
 ![Vue](https://img.shields.io/badge/Frontend-Vue%203-42b883.svg)

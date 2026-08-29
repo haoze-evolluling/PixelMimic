@@ -28,7 +28,7 @@ def main():
 
     # Create PyWebView native window
     window = webview.create_window(
-        title="PixelMimic - 桌面可视化自动化大师",
+        title="PixelMimic - 所见即达，一触即成",
         url=dist_html_path,
         js_api=api,
         width=1040,

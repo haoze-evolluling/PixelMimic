@@ -33,7 +33,7 @@ const emit = defineEmits(['close'])
           </div>
           <div class="about-title-text">
             <h3>PixelMimic</h3>
-            <p class="about-sub">桌面可视化自动化大师 v2.0</p>
+            <p class="about-sub">所见即达，一触即成</p>
           </div>
         </div>
 
