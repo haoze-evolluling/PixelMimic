@@ -4,6 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PixelMimic - 所见即达，一触即成</title>
+  <script>
+    // 主题预加载：在应用渲染前设置 data-theme，避免首帧闪白/闪黑
+    try {
+      document.documentElement.dataset.theme =
+        localStorage.getItem('pixelmimic-theme') || 'dark'
+    } catch (e) {
+      document.documentElement.dataset.theme = 'dark'
+    }
+  </script>
 </head>
 <body>
   <div id="app"></div>

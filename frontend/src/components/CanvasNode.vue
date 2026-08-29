@@ -60,18 +60,18 @@ const isCondition = computed(() => props.step.action_type === 'condition')
 const categoryConfig = computed(() => {
   const t = props.step.action_type
   if (['image_click', 'image_wait', 'image_drag'].includes(t)) {
-    return { name: '图像识别', color: '#3b82f6', icon: Crosshair }
+    return { name: '图像识别', color: 'var(--cat-image)', icon: Crosshair }
   }
   if (['mouse_click', 'mouse_scroll', 'mouse_drag', 'mouse_longpress', 'mouse_move'].includes(t)) {
-    return { name: '鼠标操作', color: '#06b6d4', icon: MousePointer }
+    return { name: '鼠标操作', color: 'var(--cat-mouse)', icon: MousePointer }
   }
   if (['type_text', 'hotkey', 'key_press'].includes(t)) {
-    return { name: '键盘操作', color: '#8b5cf6', icon: KeyboardIcon(t) }
+    return { name: '键盘操作', color: 'var(--cat-keyboard)', icon: KeyboardIcon(t) }
   }
   if (t === 'condition') {
-    return { name: '条件分支', color: '#f59e0b', icon: GitBranch }
+    return { name: '条件分支', color: 'var(--cat-condition)', icon: GitBranch }
   }
-  return { name: '流程控制', color: '#10b981', icon: Clock }
+  return { name: '流程控制', color: 'var(--cat-flow)', icon: Clock }
 })
 
 function KeyboardIcon(type) {
@@ -287,13 +287,14 @@ const handlePortPointerDown = (e, portType) => {
 .canvas-node {
   position: absolute;
   width: 220px;
-  background: #151b28;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.2);
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
   user-select: none;
   cursor: grab;
-  transition: box-shadow 0.15s ease, border-color 0.15s ease, transform 0.05s ease;
+  transition: box-shadow var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
   z-index: 10;
 }
 
@@ -302,19 +303,19 @@ const handlePortPointerDown = (e, portType) => {
 }
 
 .canvas-node:hover {
-  border-color: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 12px rgba(59, 130, 246, 0.15);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-lg);
 }
 
 .canvas-node.is-selected {
-  border-color: #3b82f6 !important;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4), 0 8px 28px rgba(0, 0, 0, 0.6);
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 40%, transparent), var(--shadow-lg);
   z-index: 20;
 }
 
 .canvas-node.is-active {
-  border-color: #3b82f6 !important;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.6), 0 0 20px rgba(59, 130, 246, 0.4);
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 60%, transparent);
   animation: node-pulse 1.5s infinite;
   z-index: 30;
 }
@@ -325,46 +326,46 @@ const handlePortPointerDown = (e, portType) => {
 }
 
 .canvas-node.status-error {
-  border-color: #ef4444 !important;
-  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.4);
+  border-color: var(--color-danger) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-danger) 40%, transparent);
 }
 
 .canvas-node.status-success {
-  border-color: #10b981;
+  border-color: var(--color-success);
 }
 
 @keyframes node-pulse {
   0% {
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4), 0 0 10px rgba(59, 130, 246, 0.2);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 40%, transparent);
   }
   50% {
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.8), 0 0 22px rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary) 80%, transparent);
   }
   100% {
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4), 0 0 10px rgba(59, 130, 246, 0.2);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 40%, transparent);
   }
 }
 
 /* Header */
 .node-header {
   height: 32px;
-  padding: 0 8px;
+  padding: 0 var(--space-2);
   display: flex;
   align-items: center;
-  gap: 6px;
-  background: rgba(255, 255, 255, 0.03);
+  gap: var(--space-1-5);
+  background: color-mix(in srgb, var(--text-primary) 3%, transparent);
   border-top: 3px solid var(--cat-color);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--border-subtle);
   border-top-left-radius: 7px;
   border-top-right-radius: 7px;
 }
 
 .node-badge {
-  font-size: 9.5px;
+  font-size: var(--text-2xs);
   font-weight: 700;
-  color: #ffffff;
-  padding: 1px 4px;
-  border-radius: 3px;
+  color: var(--text-on-accent);
+  padding: 1px var(--space-1);
+  border-radius: var(--radius-xs);
   line-height: 1;
 }
 
@@ -375,9 +376,9 @@ const handlePortPointerDown = (e, portType) => {
 }
 
 .node-title {
-  font-size: 11.5px;
+  font-size: var(--text-xs);
   font-weight: 600;
-  color: #e2e8f0;
+  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -387,7 +388,7 @@ const handlePortPointerDown = (e, portType) => {
 .node-actions {
   display: none;
   align-items: center;
-  gap: 3px;
+  gap: var(--space-0-5);
 }
 
 .canvas-node:hover .node-actions {
@@ -397,41 +398,42 @@ const handlePortPointerDown = (e, portType) => {
 .node-action-btn {
   width: 18px;
   height: 18px;
-  border-radius: 3px;
-  background: rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-xs);
+  background: var(--glass-hover);
   border: none;
-  color: #94a3b8;
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   padding: 0;
-  transition: all 0.15s;
+  transition: background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
 }
 
 .node-action-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: #ffffff;
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
 }
 
 .node-action-btn.btn-danger:hover {
-  background: #ef4444;
-  color: #ffffff;
+  background: var(--color-danger);
+  color: var(--text-on-accent);
 }
 
 /* Body */
 .node-body {
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-2-5);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-1-5);
 }
 
 .node-image-preview {
   height: 38px;
-  background: #0b0f19;
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--bg-input);
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -445,9 +447,9 @@ const handlePortPointerDown = (e, portType) => {
 }
 
 .node-desc-text {
-  font-size: 10.5px;
-  color: #94a3b8;
-  line-height: 1.35;
+  font-size: var(--text-2xs);
+  color: var(--text-secondary);
+  line-height: var(--leading-tight);
   word-break: break-all;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -459,32 +461,32 @@ const handlePortPointerDown = (e, portType) => {
 .node-status-pill {
   display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 10px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.04);
+  gap: var(--space-1);
+  font-size: var(--text-2xs);
+  padding: var(--space-0-5) var(--space-1-5);
+  border-radius: var(--radius-xs);
+  background: var(--glass-hover);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .pill-running {
-  background: rgba(59, 130, 246, 0.15);
-  color: #60a5fa;
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  background: var(--soft-primary);
+  color: var(--color-primary);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
 }
 
 .pill-success {
-  background: rgba(16, 185, 129, 0.12);
-  color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: var(--soft-success);
+  color: var(--color-success);
+  border: 1px solid color-mix(in srgb, var(--color-success) 30%, transparent);
 }
 
 .pill-error {
-  background: rgba(239, 68, 68, 0.12);
-  color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: var(--soft-danger);
+  color: var(--color-danger);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 30%, transparent);
 }
 
 .spin-icon {
@@ -533,63 +535,66 @@ const handlePortPointerDown = (e, portType) => {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #1e293b;
-  border: 2px solid #64748b;
-  transition: all 0.15s ease;
-  box-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
+  background: var(--bg-card);
+  border: 2px solid var(--text-muted);
+  transition: transform var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+  box-shadow: var(--shadow-sm);
 }
 
 .port-socket:hover .port-dot {
   transform: scale(1.35);
-  background: #3b82f6;
-  border-color: #ffffff;
-  box-shadow: 0 0 10px rgba(59, 130, 246, 0.8);
+  background: var(--color-primary);
+  border-color: var(--text-primary);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--color-primary) 80%, transparent);
 }
 
 .true-dot {
-  border-color: #10b981;
-  background: #064e3b;
+  border-color: var(--color-success);
+  background: color-mix(in srgb, var(--color-success) 18%, var(--bg-card));
 }
 
 .port-true:hover .true-dot {
-  background: #10b981;
-  border-color: #ffffff;
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.8);
+  background: var(--color-success);
+  border-color: var(--text-primary);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--color-success) 80%, transparent);
 }
 
 .false-dot {
-  border-color: #f59e0b;
-  background: #78350f;
+  border-color: var(--color-warning);
+  background: color-mix(in srgb, var(--color-warning) 18%, var(--bg-card));
 }
 
 .port-false:hover .false-dot {
-  background: #f59e0b;
-  border-color: #ffffff;
-  box-shadow: 0 0 10px rgba(245, 158, 11, 0.8);
+  background: var(--color-warning);
+  border-color: var(--text-primary);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--color-warning) 80%, transparent);
 }
 
 .port-label {
   font-size: 8.5px;
   font-weight: 600;
-  margin-right: 4px;
-  padding: 1px 3px;
-  border-radius: 2px;
+  margin-right: var(--space-1);
+  padding: 1px var(--space-0-5);
+  border-radius: var(--space-0-5);
   opacity: 0.85;
   pointer-events: none;
 }
 
 .true-label {
-  color: #34d399;
-  background: rgba(16, 185, 129, 0.15);
+  color: var(--color-success);
+  background: var(--soft-success);
 }
 
 .false-label {
-  color: #fbbf24;
-  background: rgba(245, 158, 11, 0.15);
+  color: var(--color-warning);
+  background: var(--soft-warning);
 }
 
 .next-label {
-  color: #94a3b8;
-  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  background: var(--glass-hover);
 }
 </style>

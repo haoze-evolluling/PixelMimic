@@ -1,33 +1,235 @@
-/* PixelMimic Modern Dark Theme CSS Variables */
+/* ============================================================
+   PixelMimic Design Tokens — 单一视觉规范来源 (Single Source of Truth)
+   ------------------------------------------------------------
+   架构：Primitive（色板）→ Semantic（语义，按主题映射）→ Component 级直接引用
+   主题机制：:root = 浅色，html[data-theme='dark'] = 深色（默认）
+   规则：组件内禁止硬编码颜色/字号/圆角/间距，一律引用本文件的 Token。
+   ============================================================ */
 
 :root {
-  --bg-app: #0b0f19;
-  --bg-header: #111827;
-  --bg-surface: #162032;
-  --bg-card: #1e293b;
-  --bg-card-hover: #27354f;
-  --bg-card-selected: #243556;
-  --bg-input: #0f172a;
+  color-scheme: light;
 
-  --border-subtle: #2d3b55;
-  --border-card: #334155;
-  --border-focus: #3b82f6;
+  /* ---------- Primitive: 中性色板 ---------- */
+  --slate-25:  #fcfdfe;
+  --slate-50:  #f8fafc;
+  --slate-100: #f1f5f9;
+  --slate-200: #e2e8f0;
+  --slate-300: #cbd5e1;
+  --slate-400: #94a3b8;
+  --slate-500: #64748b;
+  --slate-600: #475569;
+  --slate-700: #334155;
+  --slate-800: #1e293b;
+  --slate-900: #0f172a;
+  --slate-950: #020617;
 
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
+  /* ---------- Primitive: 品牌/状态色板 ---------- */
+  --blue-500:  #3b82f6;
+  --blue-600:  #2563eb;
+  --blue-700:  #1d4ed8;
+  --green-500: #10b981;
+  --green-600: #059669;
+  --amber-500: #f59e0b;
+  --amber-600: #d97706;
+  --red-500:   #ef4444;
+  --red-600:   #dc2626;
+  --cyan-500:  #06b6d4;
+  --cyan-600:  #0891b2;
+  --violet-500:#8b5cf6;
+  --violet-600:#7c3aed;
 
-  --color-primary: #3b82f6;
-  --color-success: #10b981;
-  --color-warning: #f59e0b;
-  --color-danger: #ef4444;
-  --color-cyan: #06b6d4;
+  /* ============================================================
+     Semantic Tokens — 浅色主题
+     ============================================================ */
 
+  /* 表面 */
+  --bg-app:            var(--slate-100);
+  --bg-header:         var(--slate-25);
+  --bg-surface:        #ffffff;
+  --bg-card:           #ffffff;
+  --bg-card-hover:     var(--slate-100);
+  --bg-card-selected:  #eff6ff;
+  --bg-input:          var(--slate-50);
+  --bg-scrim:          rgba(15, 23, 42, 0.45);
+  --canvas-bg:         #eef2f7;
+  --canvas-grid-dot:   rgba(15, 23, 42, 0.18);
+
+  /* 悬浮玻璃面板（画布工具条等） */
+  --glass-bg:          rgba(255, 255, 255, 0.88);
+  --glass-border:      rgba(15, 23, 42, 0.1);
+  --glass-hover:       rgba(15, 23, 42, 0.06);
+
+  /* 文字 */
+  --text-primary:      var(--slate-900);
+  --text-secondary:    var(--slate-600);
+  --text-muted:        var(--slate-500);
+  --text-on-accent:    #ffffff;
+
+  /* 边框 */
+  --border-subtle:     var(--slate-200);
+  --border-card:       var(--slate-200);
+  --border-strong:     var(--slate-300);
+  --border-focus:      var(--blue-600);
+
+  /* 品牌/状态 */
+  --color-primary:       var(--blue-600);
+  --color-primary-hover: var(--blue-700);
+  --color-success:       var(--green-600);
+  --color-warning:       var(--amber-600);
+  --color-danger:        var(--red-600);
+  --color-danger-hover:  #b91c1c;
+  --color-info:          var(--cyan-600);
+
+  /* 状态柔色背景（标签/徽章/图标底） */
+  --soft-primary: rgba(37, 99, 235, 0.1);
+  --soft-success: rgba(5, 150, 105, 0.1);
+  --soft-warning: rgba(217, 119, 6, 0.12);
+  --soft-danger:  rgba(220, 38, 38, 0.1);
+  --soft-info:    rgba(8, 145, 178, 0.1);
+
+  /* 流程类别色（节点/面板分类） */
+  --cat-image:    var(--blue-600);
+  --cat-mouse:    var(--cyan-600);
+  --cat-keyboard: var(--violet-600);
+  --cat-flow:     var(--green-600);
+  --cat-condition: var(--amber-600);
+
+  /* 连线标签 / 画布提示层 */
+  --edge-label-bg:   rgba(255, 255, 255, 0.96);
+  --edge-tooltip-bg: var(--slate-800);
+  --edge-tooltip-text: var(--slate-100);
+
+  /* 阴影 */
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.1);
+  --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.16);
+  --shadow-focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.22);
+
+  /* ---------- Typography ---------- */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+
+  --text-2xs: 10px;   /* 徽章/角标 */
+  --text-xs:  11px;   /* 辅助说明/标签 */
+  --text-sm:  12px;   /* 正文/表单/按钮（紧凑桌面基准） */
+  --text-md:  13px;   /* 弹窗正文 */
+  --text-lg:  14px;   /* 面板/弹窗标题 */
+  --text-xl:  16px;   /* 品牌区标题 */
+
+  --leading-tight: 1.3;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.6;
+
+  /* ---------- Spacing（4px 栅格） ---------- */
+  --space-0: 0;
+  --space-px: 1px;
+  --space-0-5: 2px;
+  --space-1: 4px;
+  --space-1-5: 6px;
+  --space-2: 8px;
+  --space-2-5: 10px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+
+  /* ---------- Radius ---------- */
+  --radius-xs: 4px;
   --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 999px;
 
+  /* ---------- Motion ---------- */
+  --duration-fast: 120ms;
+  --duration: 180ms;
+  --duration-slow: 240ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ---------- Z-Index 层级 ---------- */
+  --z-toolbar: 50;
+  --z-header: 100;
+  --z-dropdown: 900;
+  --z-modal: 1000;
+  --z-confirm: 1100;
+  --z-toast: 1200;
+}
+
+/* ============================================================
+   Semantic Tokens — 深色主题（默认）
+   ============================================================ */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  /* 表面 */
+  --bg-app:           #0b0f19;
+  --bg-header:        #111827;
+  --bg-surface:       #162032;
+  --bg-card:          #1e293b;
+  --bg-card-hover:    #27354f;
+  --bg-card-selected: #243556;
+  --bg-input:         #0f172a;
+  --bg-scrim:         rgba(2, 6, 23, 0.7);
+  --canvas-bg:        #0b0f19;
+  --canvas-grid-dot:  rgba(255, 255, 255, 0.14);
+
+  /* 悬浮玻璃面板 */
+  --glass-bg:         rgba(17, 24, 39, 0.85);
+  --glass-border:     rgba(255, 255, 255, 0.1);
+  --glass-hover:      rgba(255, 255, 255, 0.08);
+
+  /* 文字 */
+  --text-primary:     #f8fafc;
+  --text-secondary:   #94a3b8;
+  --text-muted:       #64748b;
+  --text-on-accent:   #ffffff;
+
+  /* 边框 */
+  --border-subtle:    #2d3b55;
+  --border-card:      #334155;
+  --border-strong:    #475569;
+  --border-focus:     var(--blue-500);
+
+  /* 品牌/状态 */
+  --color-primary:       var(--blue-500);
+  --color-primary-hover: var(--blue-600);
+  --color-success:       var(--green-500);
+  --color-warning:       var(--amber-500);
+  --color-danger:        var(--red-500);
+  --color-danger-hover:  #dc2626;
+  --color-info:          var(--cyan-500);
+
+  /* 状态柔色背景 */
+  --soft-primary: rgba(59, 130, 246, 0.14);
+  --soft-success: rgba(16, 185, 129, 0.14);
+  --soft-warning: rgba(245, 158, 11, 0.14);
+  --soft-danger:  rgba(239, 68, 68, 0.14);
+  --soft-info:    rgba(6, 182, 212, 0.14);
+
+  /* 流程类别色 */
+  --cat-image:    var(--blue-500);
+  --cat-mouse:    var(--cyan-500);
+  --cat-keyboard: var(--violet-500);
+  --cat-flow:     var(--green-500);
+  --cat-condition: var(--amber-500);
+
+  /* 连线标签 / 画布提示层 */
+  --edge-label-bg:     rgba(13, 18, 30, 0.94);
+  --edge-tooltip-bg:   #0f172a;
+  --edge-tooltip-text: #e2e8f0;
+
+  /* 阴影 */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-focus-ring: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+/* ---------- 向后兼容别名（渐进迁移期保留） ---------- */
+:root, :root[data-theme='dark'] {
+  --color-cyan: var(--color-info);
   --shadow-glow: 0 0 16px rgba(59, 130, 246, 0.3);
   --shadow-glow-success: 0 0 18px rgba(16, 185, 129, 0.35);
 }

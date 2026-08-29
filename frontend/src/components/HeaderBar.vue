@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useWorkflow } from '../composables/useWorkflow'
 import { useExecution } from '../composables/useExecution'
 import { useSettings } from '../composables/useSettings'
+import { useTheme } from '../composables/useTheme'
 import {
   Bot,
   PenLine,
@@ -15,6 +16,8 @@ import {
   Scissors,
   Settings,
   HelpCircle,
+  Sun,
+  Moon,
 } from 'lucide-vue-next'
 
 const emit = defineEmits(['open-settings', 'open-about'])
@@ -22,6 +25,7 @@ const emit = defineEmits(['open-settings', 'open-about'])
 const { workflow, fileName, newWorkflow, openWorkflow, saveWorkflow, startSnipForCurrentStep, syncWorkflow } = useWorkflow()
 const { executionState, startWorkflow, togglePause, stopWorkflow } = useExecution()
 const { settings } = useSettings()
+const { theme, toggleTheme } = useTheme()
 
 const isRunning = computed(() => executionState.value === 'running')
 const isPaused = computed(() => executionState.value === 'paused')
@@ -118,6 +122,15 @@ const handleRun = () => {
 
       <button
         class="btn btn-secondary btn-icon-only header-icon-btn"
+        :title="theme === 'dark' ? '切换到浅色模式' : '切换到深色模式'"
+        @click="toggleTheme"
+      >
+        <Sun v-if="theme === 'dark'" :size="14" />
+        <Moon v-else :size="14" />
+      </button>
+
+      <button
+        class="btn btn-secondary btn-icon-only header-icon-btn"
         title="首选项设置"
         @click="emit('open-settings')"
       >
@@ -143,17 +156,17 @@ const handleRun = () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 10px;
-  gap: 8px;
+  padding: 0 var(--space-2-5);
+  gap: var(--space-2);
   flex-shrink: 0;
-  z-index: 100;
+  z-index: var(--z-header);
   overflow-x: hidden;
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   flex-shrink: 1;
   min-width: 0;
 }
@@ -161,11 +174,11 @@ const handleRun = () => {
 .brand-logo {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--space-1);
   font-weight: 700;
-  font-size: 13.5px;
+  font-size: var(--text-md);
   letter-spacing: -0.3px;
-  color: #ffffff;
+  color: var(--text-primary);
   flex-shrink: 0;
 }
 
@@ -176,11 +189,11 @@ const handleRun = () => {
 .workflow-title-wrapper {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--space-1);
   height: 28px;
   box-sizing: border-box;
   background: var(--bg-surface);
-  padding: 0 8px;
+  padding: 0 var(--space-2);
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-subtle);
   max-width: 120px;
@@ -196,7 +209,7 @@ const handleRun = () => {
   background: transparent;
   border: none;
   color: var(--text-primary);
-  font-size: 11.5px;
+  font-size: var(--text-xs);
   font-weight: 500;
   width: 100%;
   outline: none;
@@ -210,7 +223,7 @@ const handleRun = () => {
 }
 
 .file-status-badge {
-  font-size: 10.5px;
+  font-size: var(--text-2xs);
   color: var(--text-muted);
   max-width: 90px;
   overflow: hidden;
@@ -222,14 +235,14 @@ const handleRun = () => {
 .header-center {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   flex-shrink: 0;
 }
 
 .header-right {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--space-1);
   flex-shrink: 0;
 }
 
@@ -243,9 +256,9 @@ const handleRun = () => {
 }
 
 .header-btn {
-  padding: 0 8px !important;
-  font-size: 11.5px !important;
-  gap: 4px;
+  padding: 0 var(--space-2) !important;
+  font-size: var(--text-xs) !important;
+  gap: var(--space-1);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -267,7 +280,7 @@ const handleRun = () => {
   width: 1px;
   height: 16px;
   background: var(--border-subtle);
-  margin: 0 2px;
+  margin: 0 var(--space-0-5);
   flex-shrink: 0;
 }
 

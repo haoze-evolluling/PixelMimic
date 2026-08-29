@@ -29,28 +29,30 @@ const { toasts } = useToast()
 .toast-container {
   position: fixed;
   top: 68px;
-  right: 20px;
+  right: var(--space-5);
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  z-index: 9999;
+  gap: var(--space-2);
+  z-index: var(--z-toast);
   pointer-events: none;
 }
 
 .toast-card {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 16px;
+  gap: var(--space-2-5);
+  padding: var(--space-2-5) var(--space-4);
   border-radius: var(--radius-md);
-  font-size: 13px;
+  font-size: var(--text-md);
   font-weight: 500;
+  background: var(--bg-card);
   box-shadow: var(--shadow-lg);
   pointer-events: auto;
   min-width: 240px;
   max-width: 400px;
   backdrop-filter: blur(8px);
   border: 1px solid var(--border-card);
+  color: var(--text-primary);
 }
 
 .toast-icon {
@@ -66,8 +68,6 @@ const { toasts } = useToast()
 }
 
 .toast-card.info {
-  background: rgba(30, 41, 59, 0.95);
-  color: var(--text-primary);
   border-left: 4px solid var(--color-primary);
 }
 .toast-card.info .toast-icon {
@@ -75,8 +75,6 @@ const { toasts } = useToast()
 }
 
 .toast-card.success {
-  background: rgba(15, 45, 34, 0.95);
-  color: #ecfdf5;
   border-left: 4px solid var(--color-success);
 }
 .toast-card.success .toast-icon {
@@ -84,8 +82,6 @@ const { toasts } = useToast()
 }
 
 .toast-card.warning {
-  background: rgba(45, 35, 15, 0.95);
-  color: #fffbeb;
   border-left: 4px solid var(--color-warning);
 }
 .toast-card.warning .toast-icon {
@@ -93,8 +89,6 @@ const { toasts } = useToast()
 }
 
 .toast-card.error {
-  background: rgba(45, 20, 20, 0.95);
-  color: #fef2f2;
   border-left: 4px solid var(--color-danger);
 }
 .toast-card.error .toast-icon {
@@ -104,7 +98,8 @@ const { toasts } = useToast()
 /* Animations */
 .toast-enter-active,
 .toast-leave-active {
-  transition: all 0.25s ease;
+  transition: opacity var(--duration) var(--ease-out),
+    transform var(--duration) var(--ease-out);
 }
 .toast-enter-from {
   opacity: 0;

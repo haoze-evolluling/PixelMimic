@@ -47,7 +47,7 @@ onUnmounted(() => {
   <Teleport to="body">
     <Transition name="confirm-fade">
       <div v-if="confirmState.isOpen" class="confirm-backdrop" @mousedown.self="handleCancel">
-        <div class="confirm-dialog" role="alertdialog" aria-modal="true">
+        <div class="confirm-dialog modal-dialog" role="alertdialog" aria-modal="true">
           <div class="confirm-icon-wrap" :class="`type-${confirmState.type}`">
             <component :is="iconMap[confirmState.type] || AlertTriangle" :size="22" />
           </div>
@@ -75,26 +75,19 @@ onUnmounted(() => {
 <style scoped>
 .confirm-backdrop {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.65);
+  inset: 0;
+  background: var(--bg-scrim);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
+  z-index: var(--z-confirm);
 }
 
 .confirm-dialog {
-  background: var(--bg-card);
-  border: 1px solid var(--border-card);
-  border-radius: var(--radius-lg);
   width: 360px;
   max-width: 90vw;
-  box-shadow: var(--shadow-lg);
-  padding: 24px 20px 18px;
+  padding: var(--space-6) var(--space-5) var(--space-4);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -108,58 +101,58 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 14px;
+  margin-bottom: var(--space-3);
 }
 .confirm-icon-wrap.type-warning {
-  background: rgba(245, 158, 11, 0.12);
+  background: var(--soft-warning);
   color: var(--color-warning);
 }
 .confirm-icon-wrap.type-danger {
-  background: rgba(239, 68, 68, 0.12);
+  background: var(--soft-danger);
   color: var(--color-danger);
 }
 .confirm-icon-wrap.type-question {
-  background: rgba(59, 130, 246, 0.12);
+  background: var(--soft-primary);
   color: var(--color-primary);
 }
 .confirm-icon-wrap.type-info {
-  background: rgba(59, 130, 246, 0.12);
-  color: var(--color-primary);
+  background: var(--soft-info);
+  color: var(--color-info);
 }
 
 .confirm-title {
-  font-size: 15px;
+  font-size: var(--text-md);
   font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
 }
 
 .confirm-message {
-  font-size: 13px;
-  line-height: 1.6;
+  font-size: var(--text-md);
+  line-height: var(--leading-relaxed);
   color: var(--text-secondary);
-  margin-bottom: 20px;
+  margin-bottom: var(--space-5);
 }
 
 .confirm-actions {
   display: flex;
-  gap: 10px;
+  gap: var(--space-2-5);
   justify-content: center;
   width: 100%;
 }
 .confirm-actions .btn {
   min-width: 88px;
-  padding: 7px 14px;
-  font-size: 13px;
+  padding: var(--space-1-5) var(--space-3);
+  font-size: var(--text-md);
 }
 
 .confirm-fade-enter-active,
 .confirm-fade-leave-active {
-  transition: opacity 0.15s ease;
+  transition: opacity var(--duration-fast) var(--ease-out);
 }
 .confirm-fade-enter-active .confirm-dialog,
 .confirm-fade-leave-active .confirm-dialog {
-  transition: transform 0.15s ease;
+  transition: transform var(--duration-fast) var(--ease-out);
 }
 .confirm-fade-enter-from,
 .confirm-fade-leave-to {

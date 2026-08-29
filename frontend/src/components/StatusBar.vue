@@ -77,8 +77,8 @@ const loopText = computed(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 10px;
-  font-size: 10.5px;
+  padding: 0 var(--space-2-5);
+  font-size: var(--text-2xs);
   color: var(--text-secondary);
   flex-shrink: 0;
 }
@@ -86,19 +86,19 @@ const loopText = computed(() => {
 .status-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .status-right {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .status-item {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--space-1);
 }
 
 .status-icon {
@@ -110,12 +110,13 @@ const loopText = computed(() => {
   height: 7px;
   border-radius: 50%;
   background: var(--color-success);
-  transition: all 0.2s ease;
+  transition: background-color var(--duration) var(--ease-out),
+    box-shadow var(--duration) var(--ease-out);
 }
 
 .status-indicator-dot.running {
-  background: var(--color-cyan);
-  box-shadow: 0 0 6px var(--color-cyan);
+  background: var(--color-info);
+  box-shadow: 0 0 6px var(--color-info);
   animation: pulse 1.5s infinite;
 }
 
@@ -136,7 +137,7 @@ const loopText = computed(() => {
   color: var(--color-success);
 }
 .status-state-text.running {
-  color: var(--color-cyan);
+  color: var(--color-info);
 }
 .status-state-text.paused {
   color: var(--color-warning);
@@ -150,31 +151,21 @@ const loopText = computed(() => {
 }
 
 .cursor-pos-val {
-  color: var(--color-cyan);
+  color: var(--color-info);
   font-variant-numeric: tabular-nums;
 }
 
 .hotkey-reminders {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1-5);
   color: var(--text-muted);
 }
 
 .hk-tag {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-}
-
-.hk-tag kbd {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: 2px;
-  padding: 0 3px;
-  font-size: 9.5px;
-  font-family: inherit;
-  color: var(--text-primary);
+  gap: var(--space-0-5);
 }
 
 @keyframes pulse {

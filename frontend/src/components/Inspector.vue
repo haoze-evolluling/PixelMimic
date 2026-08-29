@@ -901,7 +901,7 @@ const commonHotkeys = [
 
 .panel-header {
   height: 36px;
-  padding: 0 12px;
+  padding: 0 var(--space-3);
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border-subtle);
   display: flex;
@@ -913,8 +913,8 @@ const commonHotkeys = [
 .panel-title {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12.5px;
+  gap: var(--space-1-5);
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--text-primary);
 }
@@ -925,9 +925,9 @@ const commonHotkeys = [
 
 .panel-badge {
   background: var(--bg-card);
-  padding: 1px 6px;
-  border-radius: 10px;
-  font-size: 10.5px;
+  padding: 1px var(--space-1-5);
+  border-radius: var(--radius-full);
+  font-size: var(--text-2xs);
   color: var(--text-muted);
   font-weight: 500;
   border: 1px solid var(--border-subtle);
@@ -936,7 +936,7 @@ const commonHotkeys = [
 .inspector-body {
   flex: 1;
   overflow-y: auto;
-  padding: 10px;
+  padding: var(--space-2-5);
 }
 
 .inspector-empty {
@@ -945,11 +945,11 @@ const commonHotkeys = [
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: var(--space-2-5);
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: var(--text-sm);
   text-align: center;
-  padding: 20px;
+  padding: var(--space-5);
 }
 
 .empty-guide-icon {
@@ -960,24 +960,24 @@ const commonHotkeys = [
 .inspector-form {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .prop-section-card {
   background: var(--bg-card);
   border: 1px solid var(--border-card);
   border-radius: var(--radius-md);
-  padding: 10px 12px;
+  padding: var(--space-2-5) var(--space-3);
 }
 
 .section-title {
-  font-size: 11.5px;
+  font-size: var(--text-xs);
   font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--space-1);
 }
 
 .section-icon {
@@ -990,7 +990,7 @@ const commonHotkeys = [
 
 .image-target-preview-box {
   background: var(--bg-input);
-  border: 1px dashed var(--border-card);
+  border: 1px dashed var(--border-strong);
   border-radius: var(--radius-sm);
   min-height: 64px;
   max-height: 110px;
@@ -998,24 +998,24 @@ const commonHotkeys = [
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  margin-bottom: 8px;
-  padding: 4px;
+  margin-bottom: var(--space-2);
+  padding: var(--space-1);
 }
 
 .target-img-display {
   max-width: 100%;
   max-height: 100px;
   object-fit: contain;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
 }
 
 .target-img-placeholder {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: var(--space-0-5);
   color: var(--text-muted);
-  font-size: 11px;
+  font-size: var(--text-xs);
 }
 
 .placeholder-icon {
@@ -1024,14 +1024,14 @@ const commonHotkeys = [
 }
 
 .subtext {
-  font-size: 9.5px;
+  font-size: var(--text-2xs);
   color: var(--text-muted);
 }
 
 .image-buttons-row {
   display: flex;
-  gap: 6px;
-  margin-bottom: 8px;
+  gap: var(--space-1-5);
+  margin-bottom: var(--space-2);
 }
 
 .btn-snip {
@@ -1047,7 +1047,7 @@ const commonHotkeys = [
 }
 
 .mt-sm {
-  margin-top: 6px;
+  margin-top: var(--space-1-5);
 }
 
 .val-primary {
@@ -1056,27 +1056,27 @@ const commonHotkeys = [
 }
 
 .val-cyan {
-  color: var(--color-cyan);
+  color: var(--color-info);
   font-weight: 600;
 }
 
 .hotkey-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .chip-btn {
-  font-size: 10.5px;
-  padding: 2px 6px;
+  font-size: var(--text-2xs);
+  padding: var(--space-0-5) var(--space-1-5);
 }
 
 /* Branch Box Styling */
 .branch-config-box {
-  background: var(--bg-surface);
+  background: var(--bg-input);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-2-5);
 }
 
 .branch-config-box.then-branch {
@@ -1090,32 +1090,32 @@ const commonHotkeys = [
 .branch-title-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
 }
 
 .branch-tag {
-  font-size: 10px;
+  font-size: var(--text-2xs);
   font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: var(--space-0-5) var(--space-1-5);
+  border-radius: var(--radius-xs);
   letter-spacing: 0.3px;
 }
 
 .branch-tag-then {
-  background: rgba(16, 185, 129, 0.15);
+  background: var(--soft-success);
   color: var(--color-success);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  border: 1px solid color-mix(in srgb, var(--color-success) 35%, transparent);
 }
 
 .branch-tag-else {
-  background: rgba(245, 158, 11, 0.15);
+  background: var(--soft-warning);
   color: var(--color-warning);
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 35%, transparent);
 }
 
 .branch-hint {
-  font-size: 10.5px;
+  font-size: var(--text-2xs);
   color: var(--text-muted);
 }
 
@@ -1129,7 +1129,7 @@ const commonHotkeys = [
 
 .advanced-toggle-btn {
   width: 100%;
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   background: transparent;
   border: none;
   display: flex;
@@ -1137,9 +1137,11 @@ const commonHotkeys = [
   justify-content: space-between;
   cursor: pointer;
   color: var(--text-secondary);
-  font-size: 11.5px;
+  font-size: var(--text-xs);
   font-weight: 500;
-  transition: all 0.15s ease;
+  font-family: inherit;
+  transition: background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
 }
 
 .advanced-toggle-btn:hover {
@@ -1150,7 +1152,7 @@ const commonHotkeys = [
 .accordion-title {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--space-1);
 }
 
 .accordion-icon {
@@ -1158,7 +1160,7 @@ const commonHotkeys = [
 }
 
 .advanced-content {
-  padding: 10px 12px;
+  padding: var(--space-2-5) var(--space-3);
   border-top: 1px solid var(--border-subtle);
   background: var(--bg-input);
 }

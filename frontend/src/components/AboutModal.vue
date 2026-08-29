@@ -13,7 +13,7 @@ const emit = defineEmits(['close'])
 
 <template>
   <div v-if="isOpen" class="modal-backdrop" @click.self="emit('close')">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-wide">
       <!-- Modal Header -->
       <div class="modal-header">
         <div class="modal-title">
@@ -72,83 +72,22 @@ const emit = defineEmits(['close'])
 </template>
 
 <style scoped>
-.modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-dialog {
-  background: var(--bg-card);
-  border: 1px solid var(--border-card);
-  border-radius: var(--radius-lg);
+.modal-dialog-wide {
   width: 480px;
-  max-width: 90vw;
-  box-shadow: var(--shadow-lg);
-  overflow: hidden;
-}
-
-.modal-header {
-  height: 48px;
-  padding: 0 16px;
-  background: var(--bg-surface);
-  border-bottom: 1px solid var(--border-subtle);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.modal-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.title-icon {
-  color: var(--color-primary);
-}
-
-.btn-close {
-  background: transparent;
-  border: none;
-  color: var(--text-secondary);
-  cursor: pointer;
-  padding: 4px;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.btn-close:hover {
-  background: var(--bg-card-hover);
-  color: var(--text-primary);
 }
 
 .modal-body {
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  font-size: 13px;
-  line-height: 1.6;
+  padding: var(--space-5);
+  gap: var(--space-3);
+  font-size: var(--text-md);
+  line-height: var(--leading-relaxed);
 }
 
 .about-hero {
   display: flex;
   align-items: center;
-  gap: 14px;
-  margin-bottom: 4px;
+  gap: var(--space-3);
+  margin-bottom: var(--space-1);
 }
 
 .about-logo-wrap {
@@ -167,13 +106,13 @@ const emit = defineEmits(['close'])
 }
 
 .about-title-text h3 {
-  font-size: 16px;
+  font-size: var(--text-xl);
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .about-sub {
-  font-size: 12px;
+  font-size: var(--text-sm);
   color: var(--text-secondary);
 }
 
@@ -189,17 +128,17 @@ const emit = defineEmits(['close'])
   background: var(--bg-input);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  padding: 12px 14px;
+  padding: var(--space-3) var(--space-3);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-2-5);
 }
 
 .feature-item {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  font-size: 12px;
+  gap: var(--space-2-5);
+  font-size: var(--text-sm);
   color: var(--text-secondary);
 }
 
@@ -211,13 +150,5 @@ const emit = defineEmits(['close'])
   color: var(--color-primary);
   flex-shrink: 0;
   margin-top: 3px;
-}
-
-.modal-footer {
-  padding: 12px 16px;
-  background: var(--bg-surface);
-  border-top: 1px solid var(--border-subtle);
-  display: flex;
-  justify-content: flex-end;
 }
 </style>

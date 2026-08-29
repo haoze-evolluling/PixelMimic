@@ -99,13 +99,13 @@ const connections = computed(() => {
 
     const branches = isCondition
       ? [
-          { type: 'then', color: '#10b981', label: 'True 成立', fromY: fromYBase + 26, action: step.then_action || 'continue', jumpStep: step.then_jump_step },
-          { type: 'else', color: '#f59e0b', label: 'False 不成立', fromY: fromYBase + 62, action: step.else_action || 'continue', jumpStep: step.else_jump_step },
+          { type: 'then', color: 'var(--color-success)', label: 'True 成立', fromY: fromYBase + 26, action: step.then_action || 'continue', jumpStep: step.then_jump_step },
+          { type: 'else', color: 'var(--color-warning)', label: 'False 不成立', fromY: fromYBase + 62, action: step.else_action || 'continue', jumpStep: step.else_jump_step },
         ]
       : [
           // 标准动作：True=成功出口（未连线时顺序执行下一步），False=失败出口（仅显式连线时生效）
-          { type: 'next', color: '#10b981', fromY: fromYBase + 26, action: step.next_action || 'continue', jumpStep: step.next_jump_step, sequential: true },
-          { type: 'fail', color: '#f59e0b', fromY: fromYBase + 62, action: step.fail_action || 'default', jumpStep: step.fail_jump_step, sequential: false },
+          { type: 'next', color: 'var(--color-success)', fromY: fromYBase + 26, action: step.next_action || 'continue', jumpStep: step.next_jump_step, sequential: true },
+          { type: 'fail', color: 'var(--color-warning)', fromY: fromYBase + 62, action: step.fail_action || 'default', jumpStep: step.fail_jump_step, sequential: false },
         ]
 
     for (const branch of branches) {
@@ -534,7 +534,7 @@ onUnmounted(() => {
             markerUnits="userSpaceOnUse"
             orient="auto-start-reverse"
           >
-            <path d="M 1 1.8 L 10.8 6 L 1 10.2 L 3.1 6 Z" fill="#10b981" />
+            <path d="M 1 1.8 L 10.8 6 L 1 10.2 L 3.1 6 Z" class="arrow-success" />
           </marker>
 
           <marker
@@ -547,7 +547,7 @@ onUnmounted(() => {
             markerUnits="userSpaceOnUse"
             orient="auto-start-reverse"
           >
-            <path d="M 1 1.8 L 10.8 6 L 1 10.2 L 3.1 6 Z" fill="#10b981" />
+            <path d="M 1 1.8 L 10.8 6 L 1 10.2 L 3.1 6 Z" class="arrow-success" />
           </marker>
 
           <marker
@@ -560,7 +560,7 @@ onUnmounted(() => {
             markerUnits="userSpaceOnUse"
             orient="auto-start-reverse"
           >
-            <path d="M 1 1.8 L 10.8 6 L 1 10.2 L 3.1 6 Z" fill="#f59e0b" />
+            <path d="M 1 1.8 L 10.8 6 L 1 10.2 L 3.1 6 Z" class="arrow-warning" />
           </marker>
 
           <marker
@@ -573,7 +573,7 @@ onUnmounted(() => {
             markerUnits="userSpaceOnUse"
             orient="auto-start-reverse"
           >
-            <path d="M 1 1.8 L 10.8 6 L 1 10.2 L 3.1 6 Z" fill="#f59e0b" />
+            <path d="M 1 1.8 L 10.8 6 L 1 10.2 L 3.1 6 Z" class="arrow-warning" />
           </marker>
         </defs>
 
@@ -602,7 +602,7 @@ onUnmounted(() => {
             v-if="selectedEdgeId === conn.id"
             :d="conn.pathD"
             class="edge-selection-halo"
-            :stroke="conn.color"
+            :style="{ stroke: conn.color }"
           />
 
           <!-- Visible Connection Line -->
@@ -610,7 +610,7 @@ onUnmounted(() => {
             :d="conn.pathD"
             class="edge-path"
             :class="{ 'edge-active': conn.isActive, 'edge-selected': selectedEdgeId === conn.id }"
-            :stroke="conn.color"
+            :style="{ stroke: conn.color }"
             :marker-end="`url(#arrow-${conn.type})`"
           />
 
@@ -631,16 +631,15 @@ onUnmounted(() => {
                 :width="conn.labelWidth || 60"
                 :height="conn.labelHeight || 19"
                 :rx="(conn.labelHeight || 19) / 2"
-                fill="rgba(13, 18, 30, 0.94)"
-                :stroke="conn.color"
-                stroke-opacity="0.75"
-                stroke-width="1.1"
+                class="edge-label-pill"
+                :style="{ stroke: conn.color }"
               />
               <text
                 x="0"
                 y="3"
                 text-anchor="middle"
-                :fill="conn.color"
+                class="edge-label-text"
+                :style="{ fill: conn.color }"
                 font-size="8.5"
                 font-weight="600"
               >
@@ -667,18 +666,18 @@ onUnmounted(() => {
               <circle
                 r="7"
                 class="handle-outer"
-                :stroke="conn.color"
+                :style="{ stroke: conn.color }"
               />
               <circle
                 r="3.5"
                 class="handle-inner"
-                :fill="conn.color"
+                :style="{ fill: conn.color }"
               />
 
               <!-- Tooltip text when hovered -->
               <g v-if="hoveredEdgeId === conn.id" class="handle-tooltip" transform="translate(0, -18)">
-                <rect x="-44" y="-9" width="88" height="18" rx="4" fill="#0f172a" stroke="rgba(255,255,255,0.2)" stroke-width="1" />
-                <text x="0" y="3" text-anchor="middle" fill="#e2e8f0" font-size="8.5" font-weight="500">
+                <rect x="-44" y="-9" width="88" height="18" rx="4" class="handle-tooltip-box" />
+                <text x="0" y="3" text-anchor="middle" class="handle-tooltip-text" font-size="8.5" font-weight="500">
                   {{ conn.hasCustomRoute ? '拖拽调整 / 双击复位' : '拖动调整连线位置' }}
                 </text>
               </g>
@@ -691,7 +690,7 @@ onUnmounted(() => {
           v-if="isWiring"
           :d="livePreviewPath"
           class="edge-preview"
-          :stroke="wiringData.portType === 'fail' ? '#f59e0b' : '#10b981'"
+          :style="{ stroke: wiringData.portType === 'fail' ? 'var(--color-warning)' : 'var(--color-success)' }"
           stroke-dasharray="5 5"
         />
       </svg>
@@ -792,7 +791,7 @@ onUnmounted(() => {
   flex: 2;
   position: relative;
   overflow: hidden;
-  background-color: #0b0f19;
+  background-color: var(--canvas-bg);
   border-right: 1px solid var(--border-subtle);
   min-width: 320px;
   cursor: grab;
@@ -810,7 +809,7 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1px);
+  background-image: radial-gradient(var(--canvas-grid-dot) 1px, transparent 1px);
   pointer-events: none;
 }
 
@@ -839,6 +838,14 @@ onUnmounted(() => {
   pointer-events: none;
 }
 
+.arrow-success {
+  fill: var(--color-success);
+}
+
+.arrow-warning {
+  fill: var(--color-warning);
+}
+
 .edge-group {
   pointer-events: auto;
   cursor: pointer;
@@ -864,7 +871,8 @@ onUnmounted(() => {
   stroke-width: 2.2;
   stroke-linejoin: round;
   stroke-linecap: round;
-  transition: stroke-width 0.15s ease, stroke 0.15s ease, filter 0.15s ease;
+  transition: stroke-width var(--duration-fast) var(--ease-out),
+    filter var(--duration-fast) var(--ease-out);
 }
 
 .edge-group:hover .edge-path {
@@ -901,9 +909,19 @@ onUnmounted(() => {
   animation: flow-dash 0.6s linear infinite;
 }
 
+.edge-label-pill {
+  fill: var(--edge-label-bg);
+  stroke-opacity: 0.75;
+  stroke-width: 1.1;
+}
+
+.edge-label-text {
+  pointer-events: none;
+}
+
 .edge-label-group {
   cursor: pointer;
-  transition: transform 0.15s ease;
+  transition: transform var(--duration-fast) var(--ease-out);
 }
 
 .edge-label-group:hover {
@@ -913,7 +931,7 @@ onUnmounted(() => {
 /* Edge Control Handle */
 .edge-control-handle {
   cursor: grab;
-  transition: transform 0.15s ease;
+  transition: transform var(--duration-fast) var(--ease-out);
 }
 
 .edge-control-handle:active,
@@ -927,10 +945,12 @@ onUnmounted(() => {
 }
 
 .handle-outer {
-  fill: #0f172a;
+  fill: var(--bg-input);
   stroke-width: 2;
-  transition: all 0.15s ease;
-  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.6));
+  transition: transform var(--duration-fast) var(--ease-out),
+    stroke-width var(--duration-fast) var(--ease-out),
+    filter var(--duration-fast) var(--ease-out);
+  filter: drop-shadow(0 2px 5px rgba(15, 23, 42, 0.5));
 }
 
 .edge-control-handle:hover .handle-outer {
@@ -940,7 +960,7 @@ onUnmounted(() => {
 }
 
 .handle-inner {
-  transition: all 0.15s ease;
+  transition: fill var(--duration-fast) var(--ease-out);
 }
 
 .edge-control-handle.has-custom .handle-outer {
@@ -950,76 +970,89 @@ onUnmounted(() => {
 .handle-tooltip {
   pointer-events: none;
   user-select: none;
-  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));
+  filter: drop-shadow(0 4px 8px rgba(15, 23, 42, 0.45));
+}
+
+.handle-tooltip-box {
+  fill: var(--edge-tooltip-bg);
+  stroke: var(--border-strong);
+  stroke-width: 1;
+}
+
+.handle-tooltip-text {
+  fill: var(--edge-tooltip-text);
 }
 
 /* Floating Toolbar */
 .canvas-toolbar {
   position: absolute;
-  bottom: 16px;
-  left: 16px;
-  background: rgba(17, 24, 39, 0.85);
+  bottom: var(--space-4);
+  left: var(--space-4);
+  background: var(--glass-bg);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  padding: 4px 6px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-1) var(--space-1-5);
   display: flex;
   align-items: center;
-  gap: 4px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-  z-index: 50;
+  gap: var(--space-1);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-toolbar);
   user-select: none;
 }
 
 .toolbar-btn {
   height: 26px;
-  padding: 0 6px;
+  padding: 0 var(--space-1-5);
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 4px;
-  color: #94a3b8;
+  border-radius: var(--radius-xs);
+  color: var(--text-secondary);
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-size: 11px;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  font-family: inherit;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
 }
 
 .toolbar-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.15);
+  background: var(--glass-hover);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
 }
 
 .toolbar-btn.highlight-btn {
-  color: #38bdf8;
+  color: var(--color-info);
 }
 
 .toolbar-btn.highlight-btn:hover {
-  background: rgba(56, 189, 248, 0.15);
-  border-color: rgba(56, 189, 248, 0.3);
+  background: var(--soft-info);
+  border-color: color-mix(in srgb, var(--color-info) 30%, transparent);
 }
 
 .toolbar-btn.danger-btn:hover {
-  background: rgba(239, 68, 68, 0.2);
-  color: #f87171;
-  border-color: rgba(239, 68, 68, 0.4);
+  background: var(--soft-danger);
+  color: var(--color-danger);
+  border-color: color-mix(in srgb, var(--color-danger) 40%, transparent);
 }
 
 .zoom-text {
-  font-size: 10.5px;
-  color: #64748b;
+  font-size: var(--text-2xs);
+  color: var(--text-muted);
   min-width: 34px;
   text-align: center;
-  font-family: monospace;
+  font-family: var(--font-mono);
 }
 
 .toolbar-divider {
   width: 1px;
   height: 14px;
-  background: rgba(255, 255, 255, 0.1);
-  margin: 0 2px;
+  background: var(--border-subtle);
+  margin: 0 var(--space-0-5);
 }
 
 /* Empty Canvas Onboarding Guide */
@@ -1030,10 +1063,10 @@ onUnmounted(() => {
   transform: translate(-50%, -50%);
   text-align: center;
   max-width: 400px;
-  padding: 24px;
-  background: rgba(17, 24, 39, 0.7);
-  border: 1px dashed rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
+  padding: var(--space-6);
+  background: color-mix(in srgb, var(--bg-card) 82%, transparent);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
   backdrop-filter: blur(8px);
   z-index: 5;
 }
@@ -1042,36 +1075,36 @@ onUnmounted(() => {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: rgba(59, 130, 246, 0.1);
-  border: 1px solid rgba(59, 130, 246, 0.25);
+  background: var(--soft-primary);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 25%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 14px;
+  margin: 0 auto var(--space-3);
 }
 
 .empty-icon-svg {
-  color: #38bdf8;
+  color: var(--color-info);
 }
 
 .empty-title {
-  font-size: 15px;
+  font-size: var(--text-md);
   font-weight: 600;
-  color: #f1f5f9;
-  margin-bottom: 6px;
+  color: var(--text-primary);
+  margin-bottom: var(--space-1-5);
 }
 
 .empty-desc {
-  font-size: 11.5px;
-  line-height: 1.5;
-  color: #94a3b8;
-  margin-bottom: 18px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-4);
 }
 
 .guide-actions-row {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: var(--space-2-5);
 }
 </style>

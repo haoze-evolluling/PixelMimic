@@ -79,23 +79,23 @@ watch(
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 12px;
+  padding: 0 var(--space-3);
 }
 
 .console-tabs {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1-5);
 }
 
 .console-tab {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 11.5px;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
   font-weight: 600;
   color: var(--text-primary);
-  padding: 2px 6px;
+  padding: var(--space-0-5) var(--space-1-5);
 }
 
 .tab-icon {
@@ -103,85 +103,85 @@ watch(
 }
 
 .log-count {
-  font-size: 9.5px;
+  font-size: var(--text-2xs);
   background: var(--bg-card);
-  padding: 1px 4px;
-  border-radius: 8px;
+  padding: 1px var(--space-1);
+  border-radius: var(--radius-full);
   color: var(--text-muted);
 }
 
 .console-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-2-5);
 }
 
 .log-scroll-toggle {
-  font-size: 10.5px;
+  font-size: var(--text-2xs);
   color: var(--text-muted);
 }
 
 .btn-clear {
-  font-size: 10.5px;
-  padding: 2px 6px;
+  font-size: var(--text-2xs);
+  padding: var(--space-0-5) var(--space-1-5);
 }
 
 .log-scroll-area {
   flex: 1;
   overflow-y: auto;
-  padding: 6px 12px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: 11.5px;
-  line-height: 1.5;
+  padding: var(--space-1-5) var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: var(--leading-normal);
 }
 
 .log-empty {
   color: var(--text-muted);
   font-style: italic;
-  font-size: 11px;
-  padding: 4px 0;
+  font-size: var(--text-xs);
+  padding: var(--space-1) 0;
 }
 
 .log-entry {
   display: flex;
   align-items: baseline;
-  gap: 6px;
-  margin-bottom: 2px;
+  gap: var(--space-1-5);
+  margin-bottom: var(--space-0-5);
   word-break: break-all;
 }
 
 .log-time {
   color: var(--text-muted);
-  font-size: 10.5px;
+  font-size: var(--text-2xs);
   flex-shrink: 0;
 }
 
 .log-badge {
-  font-size: 9.5px;
+  font-size: var(--text-2xs);
   font-weight: 700;
-  padding: 0 4px;
-  border-radius: 3px;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-xs);
   text-transform: uppercase;
   flex-shrink: 0;
 }
 
 .log-badge.info {
-  background: rgba(59, 130, 246, 0.2);
+  background: var(--soft-primary);
   color: var(--color-primary);
 }
 
 .log-badge.success {
-  background: rgba(16, 185, 129, 0.2);
+  background: var(--soft-success);
   color: var(--color-success);
 }
 
 .log-badge.warning {
-  background: rgba(245, 158, 11, 0.2);
+  background: var(--soft-warning);
   color: var(--color-warning);
 }
 
 .log-badge.error {
-  background: rgba(239, 68, 68, 0.2);
+  background: var(--soft-danger);
   color: var(--color-danger);
 }
 

@@ -29,7 +29,7 @@ const categories = [
     id: 'image',
     name: '图像识别',
     icon: Crosshair,
-    color: '#3b82f6',
+    color: 'var(--cat-image)',
     items: [
       {
         type: 'image_click',
@@ -55,7 +55,7 @@ const categories = [
     id: 'mouse',
     name: '鼠标操作',
     icon: MousePointer,
-    color: '#06b6d4',
+    color: 'var(--cat-mouse)',
     items: [
       {
         type: 'mouse_click',
@@ -93,7 +93,7 @@ const categories = [
     id: 'keyboard',
     name: '键盘操作',
     icon: Keyboard,
-    color: '#8b5cf6',
+    color: 'var(--cat-keyboard)',
     items: [
       {
         type: 'type_text',
@@ -119,7 +119,7 @@ const categories = [
     id: 'flow',
     name: '流程控制',
     icon: WorkflowIcon,
-    color: '#10b981',
+    color: 'var(--cat-flow)',
     items: [
       {
         type: 'wait_time',
@@ -234,20 +234,20 @@ onUnmounted(() => {
 .action-palette-bar {
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border-subtle);
-  padding: 5px 12px;
+  padding: var(--space-1) var(--space-3);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   flex-shrink: 0;
   position: relative;
-  z-index: 100;
+  z-index: var(--z-header);
 }
 
 .palette-label {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 11.5px;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
   font-weight: 600;
   color: var(--text-secondary);
   white-space: nowrap;
@@ -260,7 +260,7 @@ onUnmounted(() => {
 .palette-categories {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .category-wrapper {
@@ -270,45 +270,46 @@ onUnmounted(() => {
 .category-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1-5);
   background: var(--bg-card);
   border: 1px solid var(--border-card);
   color: var(--text-primary);
-  padding: 4px 10px;
+  padding: var(--space-1) var(--space-2-5);
   border-radius: var(--radius-sm);
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 500;
+  font-family: inherit;
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.15s ease;
+  transition: background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
   user-select: none;
 }
 
 .category-btn:hover {
   background: var(--bg-card-hover);
-  border-color: var(--color-primary);
-  color: #ffffff;
+  border-color: var(--border-focus);
 }
 
 .category-btn.active {
   background: var(--bg-card-selected);
-  border-color: var(--color-primary);
-  color: #ffffff;
-  box-shadow: 0 0 10px rgba(59, 130, 246, 0.25);
+  border-color: var(--border-focus);
+  box-shadow: var(--shadow-focus-ring);
 }
 
 .category-badge {
-  font-size: 10px;
-  background: var(--bg-surface);
+  font-size: var(--text-2xs);
+  background: var(--bg-input);
   color: var(--text-muted);
-  padding: 0 4px;
-  border-radius: 8px;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-full);
   border: 1px solid var(--border-subtle);
 }
 
 .chevron-icon {
   color: var(--text-muted);
-  transition: transform 0.2s ease;
+  transition: transform var(--duration) var(--ease-out);
 }
 
 .chevron-icon.rotated {
@@ -319,35 +320,34 @@ onUnmounted(() => {
 /* Dropdown Menu styling */
 .category-dropdown {
   position: absolute;
-  top: calc(100% + 6px);
+  top: calc(100% + var(--space-1-5));
   left: 0;
   min-width: 260px;
-  background: #111827;
+  background: var(--bg-card);
   border: 1px solid var(--border-card);
   border-radius: var(--radius-md);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.6), 0 0 15px rgba(59, 130, 246, 0.15);
-  backdrop-filter: blur(12px);
-  padding: 6px;
-  z-index: 1000;
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-1-5);
+  z-index: var(--z-dropdown);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .dropdown-header {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 8px 6px;
+  gap: var(--space-1-5);
+  padding: var(--space-1-5) var(--space-2);
   border-bottom: 1px solid var(--border-subtle);
-  font-size: 11px;
+  font-size: var(--text-xs);
   font-weight: 600;
   color: var(--text-secondary);
 }
 
 .dropdown-count {
   margin-left: auto;
-  font-size: 10px;
+  font-size: var(--text-2xs);
   color: var(--text-muted);
   font-weight: normal;
 }
@@ -355,27 +355,28 @@ onUnmounted(() => {
 .dropdown-items-list {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: var(--space-0-5);
 }
 
 .action-item-btn {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  padding: 7px 9px;
+  gap: var(--space-2-5);
+  padding: var(--space-2);
   background: transparent;
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
   cursor: pointer;
+  font-family: inherit;
   text-align: left;
-  transition: all 0.15s ease;
+  transition: background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
   width: 100%;
 }
 
 .action-item-btn:hover {
-  background: rgba(59, 130, 246, 0.12);
-  border-color: rgba(59, 130, 246, 0.35);
-  transform: translateX(2px);
+  background: var(--soft-primary);
+  border-color: var(--border-focus);
 }
 
 .action-item-icon-box {
@@ -389,35 +390,34 @@ onUnmounted(() => {
   justify-content: center;
   flex-shrink: 0;
   margin-top: 1px;
-  transition: all 0.15s ease;
+  transition: border-color var(--duration-fast) var(--ease-out);
 }
 
 .action-item-btn:hover .action-item-icon-box {
   border-color: currentColor;
-  background: rgba(255, 255, 255, 0.05);
 }
 
 .action-item-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-0-5);
   min-width: 0;
 }
 
 .action-item-title {
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--text-primary);
 }
 
 .action-item-desc {
-  font-size: 10.5px;
+  font-size: var(--text-2xs);
   color: var(--text-muted);
-  line-height: 1.3;
+  line-height: var(--leading-tight);
 }
 
 .action-item-btn:hover .action-item-title {
-  color: #ffffff;
+  color: var(--color-primary);
 }
 
 .action-item-btn:hover .action-item-desc {
@@ -427,7 +427,8 @@ onUnmounted(() => {
 /* Animations */
 .dropdown-fade-enter-active,
 .dropdown-fade-leave-active {
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transition: opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
 }
 
 .dropdown-fade-enter-from,
