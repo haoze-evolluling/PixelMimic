@@ -83,7 +83,7 @@ if not exist "%CD%\packaging\pixelmimic.ico" (
 rem NOTE: do not pass --clean here; a cold rebuild drops the bundled
 rem pixelmimic/gui/web/dist data files (PyInstaller quirk). The workpath
 rem cache keeps the datas intact and makes rebuilds faster.
-"%VPY%" -m PyInstaller packaging\pixelmimic.spec --noconfirm --distpath build\dist --workpath build\work
+"%VPY%" -m PyInstaller packaging\pixelmimic.spec --noconfirm --distpath dist --workpath build\work
 if errorlevel 1 (
     echo ERROR: PyInstaller failed.
     exit /b 1
@@ -109,6 +109,8 @@ if errorlevel 1 (
 
 echo.
 echo ============================================================
-echo  Build OK: dist\installer\PixelMimicSetup-%APP_VERSION%.exe
+echo  Build OK:
+echo    - Portable App: dist\PixelMimic\PixelMimic.exe
+echo    - Installer:    dist\installer\PixelMimicSetup-%APP_VERSION%.exe
 echo ============================================================
 endlocal

@@ -1,5 +1,5 @@
 ; Inno Setup script for PixelMimic (Windows).
-; Compile from the project root after PyInstaller has produced build\dist\PixelMimic:
+; Compile from the project root after PyInstaller has produced dist\PixelMimic:
 ;   ISCC packaging\pixelmimic.iss
 ; Output: dist\installer\PixelMimicSetup-<version>.exe
 
@@ -33,7 +33,7 @@ MinVersion=10.0
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "..\build\dist\PixelMimic\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
+Source: "..\dist\PixelMimic\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
 Source: "MicrosoftEdgeWebview2Setup.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall
 
 [Icons]
