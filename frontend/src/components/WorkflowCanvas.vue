@@ -18,7 +18,6 @@ import {
   LayoutGrid,
   Trash2,
   Plus,
-  List,
   GitBranch,
   Route,
   Waypoints,
@@ -37,7 +36,6 @@ const {
   clearAllSteps,
   loadSampleTemplate,
   testSingleStep,
-  viewMode,
   edgeStyle,
   quickAddStep,
   updateEdgeCustomWaypoint,
@@ -777,34 +775,12 @@ onUnmounted(() => {
         <Trash2 :size="13" />
       </button>
     </div>
-
-    <!-- Floating View Mode Switcher -->
-    <div class="view-mode-toggle-pill">
-      <button
-        class="mode-pill-btn"
-        :class="{ active: viewMode === 'canvas' }"
-        @click="viewMode = 'canvas'"
-        title="切换到流程图画布编排模式"
-      >
-        <GitBranch :size="12" />
-        <span>画布模式</span>
-      </button>
-      <button
-        class="mode-pill-btn"
-        :class="{ active: viewMode === 'list' }"
-        @click="viewMode = 'list'"
-        title="切换到紧凑清单列表模式"
-      >
-        <List :size="12" />
-        <span>列表模式</span>
-      </button>
-    </div>
   </div>
 </template>
 
 <style scoped>
 .workflow-canvas-container {
-  flex: 1.2;
+  flex: 2;
   position: relative;
   overflow: hidden;
   background-color: #0b0f19;
@@ -1035,48 +1011,6 @@ onUnmounted(() => {
   height: 14px;
   background: rgba(255, 255, 255, 0.1);
   margin: 0 2px;
-}
-
-/* View Mode Switcher */
-.view-mode-toggle-pill {
-  position: absolute;
-  top: 12px;
-  right: 14px;
-  background: rgba(17, 24, 39, 0.85);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  padding: 2px;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
-  z-index: 50;
-}
-
-.mode-pill-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
-  border-radius: 16px;
-  background: transparent;
-  border: none;
-  font-size: 11px;
-  font-weight: 500;
-  color: #94a3b8;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.mode-pill-btn:hover {
-  color: #ffffff;
-}
-
-.mode-pill-btn.active {
-  background: #3b82f6;
-  color: #ffffff;
-  box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
 }
 
 /* Empty Canvas Onboarding Guide */

@@ -16,7 +16,6 @@ export const workflow = reactive({
 
 const filePath = ref(null)
 const selectedStepIndex = ref(-1)
-const viewMode = ref('canvas') // 'canvas' | 'list'
 const edgeStyle = ref('orthogonal') // 'orthogonal' | 'bezier'
 
 export function useWorkflow() {
@@ -323,23 +322,6 @@ export function useWorkflow() {
     syncWorkflow()
   }
 
-  const moveStep = (index, direction) => {
-    const newIdx = index + direction
-    if (newIdx < 0 || newIdx >= workflow.steps.length) return
-    const [moved] = workflow.steps.splice(index, 1)
-    workflow.steps.splice(newIdx, 0, moved)
-    selectStep(newIdx)
-    syncWorkflow()
-  }
-
-  const reorderSteps = (fromIndex, toIndex) => {
-    if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0) return
-    const [moved] = workflow.steps.splice(fromIndex, 1)
-    workflow.steps.splice(toIndex, 0, moved)
-    selectStep(toIndex)
-    syncWorkflow()
-  }
-
   const clearAllSteps = () => {
     workflow.steps = []
     selectedStepIndex.value = -1
@@ -516,8 +498,6 @@ export function useWorkflow() {
     setHotkeyString,
     deleteStep,
     duplicateStep,
-    moveStep,
-    reorderSteps,
     clearAllSteps,
     newWorkflow,
     openWorkflow,
@@ -530,7 +510,6 @@ export function useWorkflow() {
     testSingleStep,
     syncWorkflow,
     initWorkflowListeners,
-    viewMode,
     edgeStyle,
     updateStepPosition,
     autoLayoutNodes,

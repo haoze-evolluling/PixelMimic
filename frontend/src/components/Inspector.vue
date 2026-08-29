@@ -891,7 +891,7 @@ const commonHotkeys = [
 
 <style scoped>
 .panel-inspector {
-  flex: 1.1;
+  flex: 1;
   background: var(--bg-surface);
   display: flex;
   flex-direction: column;

@@ -8,7 +8,6 @@ import { useSettings } from './composables/useSettings'
 import HeaderBar from './components/HeaderBar.vue'
 import ActionPalette from './components/ActionPalette.vue'
 import WorkflowCanvas from './components/WorkflowCanvas.vue'
-import StepList from './components/StepList.vue'
 import Inspector from './components/Inspector.vue'
 import ConsoleLogs from './components/ConsoleLogs.vue'
 import StatusBar from './components/StatusBar.vue'
@@ -26,7 +25,6 @@ const {
   saveWorkflow,
   startSnipForCurrentStep,
   initWorkflowListeners,
-  viewMode,
 } = useWorkflow()
 const {
   setExecutionState,
@@ -133,8 +131,7 @@ onUnmounted(() => {
 
     <!-- Main Workspace -->
     <main class="main-workspace">
-      <WorkflowCanvas v-if="viewMode === 'canvas'" />
-      <StepList v-else />
+      <WorkflowCanvas />
       <Inspector />
     </main>
 
