@@ -87,8 +87,12 @@ PixelMimic/
 │   └── src/                 # 前端源码
 │       ├── main.js          # Vue 入口文件
 │       ├── App.vue          # 根组件
-│       ├── components/      # SFC 业务组件 (HeaderBar, StepList, Inspector, ConsoleLogs 等)
-│       ├── composables/     # 组合式状态服务 (useWorkflow, useExecution, useSettings 等)
+│       ├── components/      # SFC 业务组件 (HeaderBar, ActionPalette, ConsoleLogs 等)
+│       │   ├── canvas/      # 画布子组件 (连线层 CanvasEdges / 工具栏 / 引导页)
+│       │   └── inspector/   # 步骤属性面板分区组件 (按动作类型一区一件)
+│       ├── composables/     # 组合式状态服务 (useWorkflow 门面, useCanvasViewport 等)
+│       │   └── workflow/    # 工作流状态模块 (store / stepFactory / stepCrud / IO / tools)
+│       ├── utils/           # 纯逻辑工具 (edgeRouting/ 连线路由, actionCatalog 动作元数据)
 │       └── assets/          # 样式与主题变量
 ├── pixelmimic/
 │   ├── core/                # 核心引擎与数据模型
@@ -99,7 +103,7 @@ PixelMimic/
 │   │   ├── hotkeys.py       # pynput 全局热键监听器 (F7/F8/F9/F10)
 │   │   └── actions/         # 模块化动作处理器 (Mouse, Image, Keyboard, Flow)
 │   ├── gui/                 # PyWebView 桌面界面
-│   │   ├── api.py           # Python-JS 通信桥梁控制器
+│   │   ├── api/             # Python-JS 通信桥梁控制器 (base + 文件IO/执行/视觉 Mixin)
 │   │   ├── screen_snipper.py# 独立全屏截图取样器 (十字线+4x放大镜)
 │   │   ├── match_highlighter.py # 屏幕匹配红框闪烁高亮器
 │   │   └── web/             # 前端运行时与分发资源

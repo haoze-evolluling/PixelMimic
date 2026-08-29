@@ -1,0 +1,208 @@
+/*
+ * inspector.css
+ * 步骤属性面板的共享分区样式。
+ * 各分区组件（components/inspector/*）拆分后不再共享 scoped 作用域，
+ * 故将分区卡片、表单微调、分支盒子与高级折叠面板样式收敛至此全局层。
+ */
+
+.prop-section-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  padding: var(--space-2-5) var(--space-3);
+}
+
+.section-title {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.section-icon {
+  color: var(--color-primary);
+}
+
+.toggle-align {
+  justify-content: flex-end;
+}
+
+.image-target-preview-box {
+  background: var(--bg-input);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  min-height: 64px;
+  max-height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin-bottom: var(--space-2);
+  padding: var(--space-1);
+}
+
+.target-img-display {
+  max-width: 100%;
+  max-height: 100px;
+  object-fit: contain;
+  border-radius: var(--radius-xs);
+}
+
+.target-img-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-0-5);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+.placeholder-icon {
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+.subtext {
+  font-size: var(--text-2xs);
+  color: var(--text-muted);
+}
+
+.image-buttons-row {
+  display: flex;
+  gap: var(--space-1-5);
+  margin-bottom: var(--space-2);
+}
+
+.btn-snip {
+  flex: 1.8;
+}
+
+.btn-test-match {
+  flex: 1.2;
+}
+
+.full-btn {
+  width: 100%;
+}
+
+.mt-sm {
+  margin-top: var(--space-1-5);
+}
+
+.val-primary {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.val-cyan {
+  color: var(--color-info);
+  font-weight: 600;
+}
+
+.hotkey-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.chip-btn {
+  font-size: var(--text-2xs);
+  padding: var(--space-0-5) var(--space-1-5);
+}
+
+/* Branch Box Styling */
+.branch-config-box {
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-2-5);
+}
+
+.branch-config-box.then-branch {
+  border-left: 3px solid var(--color-success);
+}
+
+.branch-config-box.else-branch {
+  border-left: 3px solid var(--color-warning);
+}
+
+.branch-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.branch-tag {
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  padding: var(--space-0-5) var(--space-1-5);
+  border-radius: var(--radius-xs);
+  letter-spacing: 0.3px;
+}
+
+.branch-tag-then {
+  background: var(--soft-success);
+  color: var(--color-success);
+  border: 1px solid color-mix(in srgb, var(--color-success) 35%, transparent);
+}
+
+.branch-tag-else {
+  background: var(--soft-warning);
+  color: var(--color-warning);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 35%, transparent);
+}
+
+.branch-hint {
+  font-size: var(--text-2xs);
+  color: var(--text-muted);
+}
+
+/* Accordion */
+.advanced-accordion {
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  overflow: hidden;
+}
+
+.advanced-toggle-btn {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  font-family: inherit;
+  transition: background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.advanced-toggle-btn:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+}
+
+.accordion-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.accordion-icon {
+  color: var(--color-primary);
+}
+
+.advanced-content {
+  padding: var(--space-2-5) var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-input);
+}

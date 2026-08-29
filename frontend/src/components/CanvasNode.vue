@@ -1,27 +1,7 @@
 <script setup>
 import { computed } from 'vue'
-import {
-  Crosshair,
-  MousePointer,
-  Type,
-  Zap,
-  Clock,
-  Move,
-  Timer,
-  Eye,
-  Sliders,
-  Command,
-  GitBranch,
-  Navigation,
-  Play,
-  Copy,
-  Trash2,
-  CheckCircle2,
-  XCircle,
-  Loader2,
-  Sparkles,
-  Image as ImageIcon,
-} from 'lucide-vue-next'
+import { GitBranch, Play, Copy, Trash2, CheckCircle2, XCircle, Loader2 } from 'lucide-vue-next'
+import { getActionIcon, getActionCategoryColor } from '../utils/actionCatalog'
 
 const props = defineProps({
   step: {
@@ -57,46 +37,14 @@ const emit = defineEmits([
 
 const isCondition = computed(() => props.step.action_type === 'condition')
 
-const categoryConfig = computed(() => {
-  const t = props.step.action_type
-  if (['image_click', 'image_wait', 'image_drag'].includes(t)) {
-    return { name: '图像识别', color: 'var(--cat-image)', icon: Crosshair }
-  }
-  if (['mouse_click', 'mouse_scroll', 'mouse_drag', 'mouse_longpress', 'mouse_move'].includes(t)) {
-    return { name: '鼠标操作', color: 'var(--cat-mouse)', icon: MousePointer }
-  }
-  if (['type_text', 'hotkey', 'key_press'].includes(t)) {
-    return { name: '键盘操作', color: 'var(--cat-keyboard)', icon: KeyboardIcon(t) }
-  }
-  if (t === 'condition') {
-    return { name: '条件分支', color: 'var(--cat-condition)', icon: GitBranch }
-  }
-  return { name: '流程控制', color: 'var(--cat-flow)', icon: Clock }
+const categoryColor = computed(() => {
+  if (isCondition.value) return 'var(--cat-condition)'
+  return getActionCategoryColor(props.step.action_type)
 })
 
-function KeyboardIcon(type) {
-  if (type === 'type_text') return Type
-  if (type === 'hotkey') return Zap
-  return Command
-}
-
 const iconComponent = computed(() => {
-  const map = {
-    image_click: Crosshair,
-    image_wait: Eye,
-    image_drag: Move,
-    mouse_click: MousePointer,
-    mouse_scroll: Sliders,
-    mouse_drag: Move,
-    mouse_longpress: Timer,
-    mouse_move: Navigation,
-    type_text: Type,
-    hotkey: Zap,
-    key_press: Command,
-    wait_time: Clock,
-    condition: GitBranch,
-  }
-  return map[props.step.action_type] || Sparkles
+  if (isCondition.value) return GitBranch
+  return getActionIcon(props.step.action_type)
 })
 
 const handleNodePointerDown = (e) => {
@@ -131,7 +79,7 @@ const handlePortPointerDown = (e, portType) => {
     :style="{
       left: `${step.node_x || 100}px`,
       top: `${step.node_y || 160}px`,
-      '--cat-color': categoryConfig.color,
+      '--cat-color': categoryColor,
     }"
     @pointerdown="handleNodePointerDown"
   >
@@ -145,12 +93,12 @@ const handlePortPointerDown = (e, portType) => {
     </div>
 
     <!-- Node Header -->
-    <div class="node-header" :style="{ borderTopColor: categoryConfig.color }">
-      <div class="node-badge" :style="{ backgroundColor: categoryConfig.color }">
+    <div class="node-header" :style="{ borderTopColor: categoryColor }">
+      <div class="node-badge" :style="{ backgroundColor: categoryColor }">
         {{ String(index + 1).padStart(2, '0') }}
       </div>
 
-      <div class="node-icon-box" :style="{ color: categoryConfig.color }">
+      <div class="node-icon-box" :style="{ color: categoryColor }">
         <component :is="iconComponent" :size="13" />
       </div>
 
