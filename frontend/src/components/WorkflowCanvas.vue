@@ -10,6 +10,7 @@ import CanvasEdges from './canvas/CanvasEdges.vue'
 import CanvasToolbar from './canvas/CanvasToolbar.vue'
 import CanvasOnboarding from './canvas/CanvasOnboarding.vue'
 import EdgeContextMenu from './canvas/EdgeContextMenu.vue'
+import NodeContextMenu from './canvas/NodeContextMenu.vue'
 import {
   routeAllEdges,
   generateOrthogonalPath,
@@ -78,6 +79,7 @@ const edgeDrag = reactive({
 // 连线选中 & 右键菜单
 const selectedEdgeId = ref(null)
 const edgeMenu = reactive({ visible: false, x: 0, y: 0, conn: null })
+const nodeMenu = reactive({ visible: false, x: 0, y: 0, index: -1 })
 
 // 节点实际渲染高度测量（ResizeObserver），连线端点据此对齐端口
 const { getNodeHeightAt } = useNodeHeights(workflow)
@@ -378,6 +380,11 @@ const closeEdgeMenu = () => {
   edgeMenu.conn = null
 }
 
+const closeNodeMenu = () => {
+  nodeMenu.visible = false
+  nodeMenu.index = -1
+}
+
 const handleEdgeContextMenu = ({ conn, event }) => {
   event.preventDefault()
   event.stopPropagation()
@@ -385,11 +392,43 @@ const handleEdgeContextMenu = ({ conn, event }) => {
     cancelWiring()
     return
   }
+  closeNodeMenu()
   selectedEdgeId.value = conn.id
   edgeMenu.visible = true
   edgeMenu.x = event.clientX
   edgeMenu.y = event.clientY
   edgeMenu.conn = conn
+}
+
+const handleNodeContextMenu = ({ event, index }) => {
+  if (isWiring.value) {
+    cancelWiring()
+    return
+  }
+  closeEdgeMenu()
+  selectStep(index)
+  nodeMenu.visible = true
+  nodeMenu.x = event.clientX
+  nodeMenu.y = event.clientY
+  nodeMenu.index = index
+}
+
+const handleNodeMenuTest = () => {
+  const index = nodeMenu.index
+  closeNodeMenu()
+  if (index >= 0) testSingleStep(index)
+}
+
+const handleNodeMenuDuplicate = () => {
+  const index = nodeMenu.index
+  closeNodeMenu()
+  if (index >= 0) duplicateStep(index)
+}
+
+const handleNodeMenuDelete = () => {
+  const index = nodeMenu.index
+  closeNodeMenu()
+  if (index >= 0) deleteStep(index)
 }
 
 const handleMenuDelete = () => {
@@ -419,6 +458,7 @@ const handleCanvasPointerDown = (e) => {
     return
   }
   closeEdgeMenu()
+  closeNodeMenu()
 
   // 连线绘制模式：点击输入端口完成连线，点击空白处追加网格转折点
   if (isWiring.value) {
@@ -552,6 +592,7 @@ const handleNodePointerDown = ({ event, index }) => {
 const handlePortPointerDown = ({ event, stepIndex, portType }) => {
   if (isWiring.value) return
   closeEdgeMenu()
+  closeNodeMenu()
   startWiring({ stepIndex, portType })
 }
 
@@ -583,6 +624,10 @@ const handleKeyDown = (e) => {
     }
     if (edgeMenu.visible) {
       closeEdgeMenu()
+      return
+    }
+    if (nodeMenu.visible) {
+      closeNodeMenu()
       return
     }
     selectedEdgeId.value = null
@@ -687,9 +732,7 @@ onUnmounted(() => {
         @select="selectStepGuarded"
         @node-pointerdown="handleNodePointerDown"
         @port-pointerdown="handlePortPointerDown"
-        @delete="deleteStep"
-        @duplicate="duplicateStep"
-        @test="testSingleStep"
+        @node-context-menu="handleNodeContextMenu"
       />
     </div>
 
@@ -727,6 +770,17 @@ onUnmounted(() => {
     @close="closeEdgeMenu"
     @delete="handleMenuDelete"
     @reset="handleMenuReset"
+  />
+
+  <!-- Node Right-Click Context Menu（Teleport 到 body，不参与画布变换） -->
+  <NodeContextMenu
+    :visible="nodeMenu.visible"
+    :x="nodeMenu.x"
+    :y="nodeMenu.y"
+    @close="closeNodeMenu"
+    @test="handleNodeMenuTest"
+    @duplicate="handleNodeMenuDuplicate"
+    @delete="handleNodeMenuDelete"
   />
 </template>
 

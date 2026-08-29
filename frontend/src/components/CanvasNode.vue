@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { GitBranch, Play, Copy, Trash2, CheckCircle2, XCircle, Loader2 } from 'lucide-vue-next'
+import { GitBranch, CheckCircle2, XCircle, Loader2 } from 'lucide-vue-next'
 import { getActionIcon, getActionCategoryColor } from '../utils/actionCatalog'
 
 const props = defineProps({
@@ -46,9 +46,7 @@ const emit = defineEmits([
   'select',
   'node-pointerdown',
   'port-pointerdown',
-  'delete',
-  'duplicate',
-  'test',
+  'node-context-menu',
 ])
 
 const isCondition = computed(() => props.step.action_type === 'condition')
@@ -64,12 +62,18 @@ const iconComponent = computed(() => {
 })
 
 const handleNodePointerDown = (e) => {
-  // Ignore clicks on buttons or sockets
-  if (e.target.closest('.port-socket') || e.target.closest('.node-action-btn') || e.target.closest('.toggle-switch')) {
+  // Ignore clicks on sockets or switches
+  if (e.target.closest('.port-socket') || e.target.closest('.toggle-switch')) {
     return
   }
   emit('select', props.index)
   emit('node-pointerdown', { event: e, index: props.index })
+}
+
+const handleNodeContextMenu = (e) => {
+  e.preventDefault()
+  e.stopPropagation()
+  emit('node-context-menu', { event: e, index: props.index })
 }
 
 const handlePortPointerDown = (e, portType) => {
@@ -98,6 +102,7 @@ const handlePortPointerDown = (e, portType) => {
       '--cat-color': categoryColor,
     }"
     @pointerdown="handleNodePointerDown"
+    @contextmenu="handleNodeContextMenu"
   >
     <!-- Left Input Socket -->
     <div
@@ -121,31 +126,6 @@ const handlePortPointerDown = (e, portType) => {
 
       <div class="node-title" :title="step.name">
         {{ step.name || '未命名步骤' }}
-      </div>
-
-      <!-- Quick Action Buttons -->
-      <div class="node-actions">
-        <button
-          class="node-action-btn"
-          title="测试单步"
-          @click.stop="emit('test', index)"
-        >
-          <Play :size="10" />
-        </button>
-        <button
-          class="node-action-btn"
-          title="复制步骤"
-          @click.stop="emit('duplicate', index)"
-        >
-          <Copy :size="10" />
-        </button>
-        <button
-          class="node-action-btn btn-danger"
-          title="删除步骤"
-          @click.stop="emit('delete', index)"
-        >
-          <Trash2 :size="10" />
-        </button>
       </div>
     </div>
 
@@ -352,42 +332,6 @@ const handlePortPointerDown = (e, portType) => {
   overflow: hidden;
   text-overflow: ellipsis;
   flex: 1;
-}
-
-.node-actions {
-  display: none;
-  align-items: center;
-  gap: var(--space-0-5);
-}
-
-.canvas-node:hover .node-actions {
-  display: flex;
-}
-
-.node-action-btn {
-  width: 18px;
-  height: 18px;
-  border-radius: var(--radius-xs);
-  background: var(--glass-hover);
-  border: none;
-  color: var(--text-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  padding: 0;
-  transition: background-color var(--duration-fast) var(--ease-out),
-    color var(--duration-fast) var(--ease-out);
-}
-
-.node-action-btn:hover {
-  background: var(--bg-card-hover);
-  color: var(--text-primary);
-}
-
-.node-action-btn.btn-danger:hover {
-  background: var(--color-danger);
-  color: var(--text-on-accent);
 }
 
 /* Body */
