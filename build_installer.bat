@@ -2,7 +2,7 @@
 setlocal EnableExtensions
 cd /d "%~dp0"
 
-set "APP_VERSION=2.0.0"
+set "APP_VERSION=1.0.0"
 set "VPY=%CD%\.venv-build\Scripts\python.exe"
 
 echo ============================================================

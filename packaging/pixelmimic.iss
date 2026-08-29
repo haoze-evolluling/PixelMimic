@@ -4,7 +4,7 @@
 ; Output: dist\installer\PixelMimicSetup-<version>.exe
 
 #define MyAppName "PixelMimic"
-#define MyAppVersion "2.0.0"
+#define MyAppVersion "1.0.0"
 #define MyAppPublisher "PixelMimic"
 #define MyAppExeName "PixelMimic.exe"
 
