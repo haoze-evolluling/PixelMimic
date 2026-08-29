@@ -9,13 +9,20 @@ import CanvasNode from './CanvasNode.vue'
 import CanvasEdges from './canvas/CanvasEdges.vue'
 import CanvasToolbar from './canvas/CanvasToolbar.vue'
 import CanvasOnboarding from './canvas/CanvasOnboarding.vue'
+import EdgeContextMenu from './canvas/EdgeContextMenu.vue'
 import {
-  calculateSmartWaypoints,
-  generateRoundedOrthogonalPath,
-  generateSmoothBezierPath,
   routeAllEdges,
+  generateOrthogonalPath,
+  calculateGridLRoute,
+  finishRouteToPort,
+  moveEdgeVertex,
+  finalizeWaypoints,
+  snapToGrid,
+  GRID_SIZE,
+  NODE_WIDTH,
+  NODE_DEFAULT_HEIGHT,
 } from '../utils/edgeRouting'
-import { outputPortX, outputPortY, inputPortY, PORT_INPUT_GAP } from '../utils/canvasPorts'
+import { outputPortX, outputPortY, inputPortY, portCenterDy, PORT_INPUT_GAP } from '../utils/canvasPorts'
 
 const {
   workflow,
@@ -30,10 +37,10 @@ const {
   clearAllSteps,
   loadSampleTemplate,
   testSingleStep,
-  edgeStyle,
   quickAddStep,
-  updateEdgeCustomWaypoint,
-  resetEdgeCustomWaypoint,
+  setEdgeCustomRoute,
+  resetEdgeRoute,
+  normalizeStepPositions,
 } = useWorkflow()
 
 const { stepStatuses, activeStepIndex } = useExecution()
@@ -45,25 +52,32 @@ const canvasContainerRef = ref(null)
 const draggingNodeIndex = ref(-1)
 const dragOffset = reactive({ x: 0, y: 0 })
 
-// Port Wiring State
+// 连线绘制状态（Multisim 式多点绘制）：
+// 从输出端口拖出后，依次单击网格点规划转折，最后点击目标输入端口完成。
 const isWiring = ref(false)
 const wiringData = reactive({
   sourceIndex: -1,
   portType: 'next',
-  startX: 0,
-  startY: 0,
-  currentX: 0,
-  currentY: 0,
+  points: [], // 已确认的路径点（首点为输出端口坐标）
+  cursor: { x: 0, y: 0 },
 })
 
-// Edge Selection & Waypoint Dragging State
-const selectedEdgeId = ref(null)
-const draggingEdgeData = reactive({
-  isDragging: false,
-  sourceIndex: -1,
-  portType: 'next',
-  tempWaypoint: null,
+// 连线编辑状态：拖拽中间线段（垂直于线段方向平移）或转折点（保持正交联动）
+const edgeDrag = reactive({
+  active: false,
+  mode: null, // 'segment' | 'vertex'
+  fromIndex: -1,
+  portType: null,
+  segIndex: -1,
+  vertIndex: -1,
+  origin: [], // 拖拽起始时的完整路径点
+  points: [], // 当前路径点（实时预览）
+  startMouse: { x: 0, y: 0 },
 })
+
+// 连线选中 & 右键菜单
+const selectedEdgeId = ref(null)
+const edgeMenu = reactive({ visible: false, x: 0, y: 0, conn: null })
 
 // 节点实际渲染高度测量（ResizeObserver），连线端点据此对齐端口
 const { getNodeHeightAt } = useNodeHeights(workflow)
@@ -73,16 +87,21 @@ const stepsForRouting = computed(() =>
   workflow.steps.map((s, idx) => ({ ...s, node_h: getNodeHeightAt(idx) }))
 )
 
+// 节点端口组锚定偏移（已按网格吸附），传给 CanvasNode 与连线端点计算保持一致
+const nodePortCenterDy = (idx) => portCenterDy(getNodeHeightAt(idx))
+
 // Calculate all active connections (Edges) with Smart Obstacle Avoidance
 const connections = computed(() => {
   const list = []
   if (!workflow.steps || workflow.steps.length === 0) return list
 
-  const resolveCustomWaypoint = (step, idx, portType) => {
-    if (draggingEdgeData.isDragging && draggingEdgeData.sourceIndex === idx && draggingEdgeData.portType === portType) {
-      return draggingEdgeData.tempWaypoint
+  // 自定义正交路径（用户自绘或拖拽调整），拖拽中优先取实时预览点
+  const resolveCustomPoints = (idx, portType) => {
+    if (edgeDrag.active && edgeDrag.fromIndex === idx && edgeDrag.portType === portType) {
+      return edgeDrag.points.slice(1, -1)
     }
-    return step.metadata?.custom_routes?.[portType] || null
+    const stored = workflow.steps[idx]?.metadata?.custom_routes?.[portType]
+    return Array.isArray(stored) && stored.length > 0 ? stored : null
   }
 
   workflow.steps.forEach((step, idx) => {
@@ -116,6 +135,7 @@ const connections = computed(() => {
       const labelText = isCondition
         ? branch.label
         : (isJump ? `${branch.type === 'fail' ? 'False' : 'True'} 跳至 #${targetIdx + 1}` : null)
+      const customPoints = resolveCustomPoints(idx, branch.type)
 
       list.push({
         id: `conn-${idx}-${branch.type}-${targetIdx}`,
@@ -130,14 +150,14 @@ const connections = computed(() => {
         fromY: outputPortY(step, getNodeHeightAt(idx), branch.portKind),
         toX: (targetStep.node_x || 100) - PORT_INPUT_GAP,
         toY: inputPortY(targetStep, getNodeHeightAt(targetIdx)),
-        hasCustomRoute: !!step.metadata?.custom_routes?.[branch.type],
-        customWaypoint: resolveCustomWaypoint(step, idx, branch.type),
+        customPoints,
+        hasCustomRoute: !!customPoints,
         isActive: activeStepIndex.value === idx || activeStepIndex.value === targetIdx,
       })
     }
   })
 
-  // 统一路由：绕行走廊通道错位 + 标签智能定位，避免连线/标签重合
+  // 统一路由：网格对齐 + 绕行走廊通道错位 + 标签智能定位，避免连线/标签重合
   const routes = routeAllEdges(
     stepsForRouting.value,
     list.map(c => ({
@@ -146,7 +166,7 @@ const connections = computed(() => {
       toIndex: c.toIndex,
       from: { x: c.fromX, y: c.fromY },
       to: { x: c.toX, y: c.toY },
-      customWaypoint: c.customWaypoint,
+      customPoints: c.customPoints,
       labelText: c.hasLabel ? c.label : null,
       fontSize: 8.5,
     }))
@@ -156,9 +176,7 @@ const connections = computed(() => {
     const route = routes.get(c.id)
     if (!route) return
     c.waypoints = route.waypoints
-    c.pathD = edgeStyle.value === 'bezier'
-      ? generateSmoothBezierPath(route.waypoints)
-      : generateRoundedOrthogonalPath(route.waypoints, 12)
+    c.pathD = generateOrthogonalPath(route.waypoints)
     c.labelAnchor = route.labelAnchor
     c.labelWidth = route.labelWidth
     c.labelHeight = route.labelHeight
@@ -185,29 +203,209 @@ const {
   containerRef: canvasContainerRef,
 })
 
-// Live Preview Wire Path
+// ---- 坐标换算与命中辅助 ----
+
+const getCanvasPoint = (e) => {
+  const containerRect = canvasContainerRef.value?.getBoundingClientRect()
+  if (!containerRect) return { x: 0, y: 0 }
+  return {
+    x: (e.clientX - containerRect.left - panX.value) / scale.value,
+    y: (e.clientY - containerRect.top - panY.value) / scale.value,
+  }
+}
+
+// 网格点是否落在某个节点内部（自环源节点除外）——连线不允许无意义地穿过节点
+const isInsideAnyNode = (p, excludeIdx = -1) => {
+  return stepsForRouting.value.some((s, idx) => {
+    if (idx === excludeIdx) return false
+    const x = s.node_x || 100
+    const y = s.node_y || 160
+    return p.x > x && p.x < x + NODE_WIDTH && p.y > y && p.y < y + (s.node_h || NODE_DEFAULT_HEIGHT)
+  })
+}
+
+// ---- 连线绘制（多点点击规划路径） ----
+
+const startWiring = ({ stepIndex, portType }) => {
+  const step = workflow.steps[stepIndex]
+  const portKind = portType === 'else' || portType === 'fail' ? 'false' : 'true'
+  isWiring.value = true
+  wiringData.sourceIndex = stepIndex
+  wiringData.portType = portType
+  wiringData.points = [{
+    x: outputPortX(step),
+    y: outputPortY(step, getNodeHeightAt(stepIndex), portKind),
+  }]
+  wiringData.cursor = { ...wiringData.points[0] }
+}
+
+const cancelWiring = () => {
+  isWiring.value = false
+  wiringData.sourceIndex = -1
+  wiringData.points = []
+}
+
+// 单击空白网格点：把路径延伸至该点（先水平后垂直的 L 形转折）
+const appendWiringPoint = (e) => {
+  const p = getCanvasPoint(e)
+  const snapped = { x: snapToGrid(p.x), y: snapToGrid(p.y) }
+  if (isInsideAnyNode(snapped, wiringData.sourceIndex)) return
+  const last = wiringData.points[wiringData.points.length - 1]
+  const seg = calculateGridLRoute(last, snapped)
+  wiringData.points.push(...seg.slice(1))
+}
+
+// 点击目标输入端口：收尾接线并持久化用户规划的转折点
+const finishWiring = (inputSocket) => {
+  const targetStepIdx = parseInt(inputSocket.getAttribute('data-step-index'))
+  if (!isNaN(targetStepIdx)) {
+    const targetStep = workflow.steps[targetStepIdx]
+    const last = wiringData.points[wiringData.points.length - 1]
+    const port = {
+      x: (targetStep.node_x || 100) - PORT_INPUT_GAP,
+      y: inputPortY(targetStep, getNodeHeightAt(targetStepIdx)),
+    }
+    const seg = finishRouteToPort(last, port)
+    const full = finalizeWaypoints([...wiringData.points, ...seg.slice(1)])
+    const mids = full.slice(1, -1)
+    connectSteps(wiringData.sourceIndex, targetStepIdx, wiringData.portType)
+    if (mids.length > 0) {
+      setEdgeCustomRoute(wiringData.sourceIndex, wiringData.portType, mids)
+    }
+  }
+  cancelWiring()
+}
+
+// 连线绘制实时预览：最后一个已确认点到光标的 L 形网格路径
 const livePreviewPath = computed(() => {
-  if (!isWiring.value) return ''
-  const waypoints = calculateSmartWaypoints(
-    { x: wiringData.startX, y: wiringData.startY },
-    { x: wiringData.currentX, y: wiringData.currentY },
-    stepsForRouting.value,
-    wiringData.sourceIndex,
-    -1
-  )
-  return edgeStyle.value === 'bezier'
-    ? generateSmoothBezierPath(waypoints)
-    : generateRoundedOrthogonalPath(waypoints, 12)
+  if (!isWiring.value || wiringData.points.length === 0) return ''
+  const last = wiringData.points[wiringData.points.length - 1]
+  const seg = calculateGridLRoute(last, wiringData.cursor)
+  return generateOrthogonalPath([...wiringData.points, ...seg.slice(1)])
 })
 
-// Canvas Pointer Handlers
+// ---- 连线编辑（拖拽线段 / 转折点） ----
+
+const beginEdgeDrag = (conn, mode, indices, event) => {
+  selectedEdgeId.value = conn.id
+  edgeDrag.active = true
+  edgeDrag.mode = mode
+  edgeDrag.fromIndex = conn.fromIndex
+  edgeDrag.portType = conn.type
+  edgeDrag.segIndex = indices.segIndex ?? -1
+  edgeDrag.vertIndex = indices.vertIndex ?? -1
+  edgeDrag.origin = conn.waypoints.map(p => ({ ...p }))
+  edgeDrag.points = conn.waypoints.map(p => ({ ...p }))
+  edgeDrag.startMouse = getCanvasPoint(event)
+}
+
+const handleEdgeSegmentPointerDown = ({ conn, segIndex, event }) => {
+  beginEdgeDrag(conn, 'segment', { segIndex }, event)
+}
+
+const handleEdgeVertexPointerDown = ({ conn, vertIndex, event }) => {
+  beginEdgeDrag(conn, 'vertex', { vertIndex }, event)
+}
+
+const applyEdgeDragMove = (cur) => {
+  if (edgeDrag.mode === 'segment') {
+    const a = edgeDrag.origin[edgeDrag.segIndex]
+    const b = edgeDrag.origin[edgeDrag.segIndex + 1]
+    if (!a || !b) return
+    const pts = edgeDrag.points
+    if (a.y === b.y) {
+      // 水平段：沿垂直方向平移（网格吸附）
+      const ny = snapToGrid(a.y + (cur.y - edgeDrag.startMouse.y))
+      pts[edgeDrag.segIndex].y = ny
+      pts[edgeDrag.segIndex + 1].y = ny
+    } else {
+      // 垂直段：沿水平方向平移（网格吸附）
+      const nx = snapToGrid(a.x + (cur.x - edgeDrag.startMouse.x))
+      pts[edgeDrag.segIndex].x = nx
+      pts[edgeDrag.segIndex + 1].x = nx
+    }
+  } else {
+    edgeDrag.points = moveEdgeVertex(edgeDrag.origin, edgeDrag.vertIndex, cur)
+  }
+}
+
+const endEdgeDrag = () => {
+  const cleaned = finalizeWaypoints(edgeDrag.points)
+  const mids = cleaned.slice(1, -1)
+  if (mids.length > 0) {
+    setEdgeCustomRoute(edgeDrag.fromIndex, edgeDrag.portType, mids)
+  } else {
+    resetEdgeRoute(edgeDrag.fromIndex, edgeDrag.portType)
+  }
+  edgeDrag.active = false
+  edgeDrag.mode = null
+  edgeDrag.origin = []
+  edgeDrag.points = []
+}
+
+// ---- 右键菜单 ----
+
+const closeEdgeMenu = () => {
+  edgeMenu.visible = false
+  edgeMenu.conn = null
+}
+
+const handleEdgeContextMenu = ({ conn, event }) => {
+  event.preventDefault()
+  event.stopPropagation()
+  if (isWiring.value) {
+    cancelWiring()
+    return
+  }
+  selectedEdgeId.value = conn.id
+  edgeMenu.visible = true
+  edgeMenu.x = event.clientX
+  edgeMenu.y = event.clientY
+  edgeMenu.conn = conn
+}
+
+const handleMenuDelete = () => {
+  const conn = edgeMenu.conn
+  closeEdgeMenu()
+  if (!conn) return
+  if (['then', 'else', 'next', 'fail'].includes(conn.type)) {
+    disconnectBranch(conn.fromIndex, conn.type)
+  }
+  selectedEdgeId.value = null
+}
+
+const handleMenuReset = () => {
+  const conn = edgeMenu.conn
+  closeEdgeMenu()
+  if (conn) resetEdgeRoute(conn.fromIndex, conn.type)
+}
+
+// ---- 画布指针事件编排 ----
+
 const handleCanvasPointerDown = (e) => {
   if (
-    e.target.closest('.canvas-node') ||
     e.target.closest('.canvas-toolbar') ||
     e.target.closest('.onboarding-canvas') ||
-    e.target.closest('.edge-group') ||
-    e.target.closest('.edge-control-handle')
+    e.target.closest('.canvas-context-hint')
+  ) {
+    return
+  }
+  closeEdgeMenu()
+
+  // 连线绘制模式：点击输入端口完成连线，点击空白处追加网格转折点
+  if (isWiring.value) {
+    const inputSocket = e.target.closest('.port-input')
+    if (inputSocket) {
+      finishWiring(inputSocket)
+      return
+    }
+    appendWiringPoint(e)
+    return
+  }
+
+  if (
+    e.target.closest('.canvas-node') ||
+    e.target.closest('.edge-group')
   ) {
     return
   }
@@ -217,6 +415,13 @@ const handleCanvasPointerDown = (e) => {
   isPanning.value = true
   panStart.x = e.clientX - panX.value
   panStart.y = e.clientY - panY.value
+}
+
+const handleCanvasContextMenu = (e) => {
+  e.preventDefault()
+  if (isWiring.value) {
+    cancelWiring()
+  }
 }
 
 // Coalesce pointermove (up to 1000Hz on high-polling mice) into one edge
@@ -238,34 +443,23 @@ const processPointerMove = (e) => {
     if (containerRect) {
       const mouseCanvasX = (e.clientX - containerRect.left - panX.value) / scale.value
       const mouseCanvasY = (e.clientY - containerRect.top - panY.value) / scale.value
-      const newX = mouseCanvasX - dragOffset.x
-      const newY = mouseCanvasY - dragOffset.y
+      // 节点落点吸附网格，保证端口与连线端点始终落在网格点上
+      const newX = snapToGrid(mouseCanvasX - dragOffset.x)
+      const newY = snapToGrid(mouseCanvasY - dragOffset.y)
       updateStepPosition(draggingNodeIndex.value, newX, newY)
     }
     return
   }
 
-  // 3. Dragging Wire (Wiring)
+  // 3. Wiring Preview
   if (isWiring.value) {
-    const containerRect = canvasContainerRef.value?.getBoundingClientRect()
-    if (containerRect) {
-      wiringData.currentX = (e.clientX - containerRect.left - panX.value) / scale.value
-      wiringData.currentY = (e.clientY - containerRect.top - panY.value) / scale.value
-    }
+    wiringData.cursor = getCanvasPoint(e)
     return
   }
 
-  // 4. Dragging Edge Waypoint Handle
-  if (draggingEdgeData.isDragging) {
-    const containerRect = canvasContainerRef.value?.getBoundingClientRect()
-    if (containerRect) {
-      const mouseCanvasX = (e.clientX - containerRect.left - panX.value) / scale.value
-      const mouseCanvasY = (e.clientY - containerRect.top - panY.value) / scale.value
-      draggingEdgeData.tempWaypoint = {
-        x: mouseCanvasX,
-        y: mouseCanvasY,
-      }
-    }
+  // 4. Dragging Edge Segment / Vertex
+  if (edgeDrag.active) {
+    applyEdgeDragMove(getCanvasPoint(e))
   }
 }
 
@@ -287,43 +481,20 @@ const handleGlobalPointerUp = (e) => {
     draggingNodeIndex.value = -1
   }
   if (isWiring.value) {
-    // Check if pointer is over an input socket
+    // 拖拽释放到输入端口上同样完成连线；否则保持绘制状态等待下一次点击
     const target = document.elementFromPoint(e.clientX, e.clientY)
     const inputSocket = target?.closest('.port-input')
     if (inputSocket) {
-      const targetStepIdx = parseInt(inputSocket.getAttribute('data-step-index'))
-      // 允许 targetStepIdx === sourceIndex：自环连线（重复执行自身）
-      if (!isNaN(targetStepIdx)) {
-        connectSteps(wiringData.sourceIndex, targetStepIdx, wiringData.portType)
-      }
+      finishWiring(inputSocket)
     }
-    isWiring.value = false
-    wiringData.sourceIndex = -1
+    return
   }
-  if (draggingEdgeData.isDragging) {
-    if (draggingEdgeData.tempWaypoint && draggingEdgeData.sourceIndex >= 0) {
-      updateEdgeCustomWaypoint(
-        draggingEdgeData.sourceIndex,
-        draggingEdgeData.portType,
-        draggingEdgeData.tempWaypoint
-      )
-    }
-    draggingEdgeData.isDragging = false
-    draggingEdgeData.sourceIndex = -1
-    draggingEdgeData.tempWaypoint = null
+  if (edgeDrag.active) {
+    endEdgeDrag()
   }
 }
 
-// Edge Handle Pointer Down
-const handleEdgeHandlePointerDown = ({ event, conn }) => {
-  event.stopPropagation()
-  selectedEdgeId.value = conn.id
-  draggingEdgeData.isDragging = true
-  draggingEdgeData.sourceIndex = conn.fromIndex
-  draggingEdgeData.portType = conn.type
-  draggingEdgeData.tempWaypoint = { x: conn.labelAnchor.x, y: conn.labelAnchor.y }
-}
-
+// Edge Selection / Reset
 const handleEdgeClick = (conn, e) => {
   e.stopPropagation()
   selectedEdgeId.value = conn.id
@@ -332,11 +503,12 @@ const handleEdgeClick = (conn, e) => {
 
 const handleEdgeDoubleClick = (conn, e) => {
   e.stopPropagation()
-  resetEdgeCustomWaypoint(conn.fromIndex, conn.type)
+  resetEdgeRoute(conn.fromIndex, conn.type)
 }
 
 // Node Drag Initiation
 const handleNodePointerDown = ({ event, index }) => {
+  if (isWiring.value) return
   draggingNodeIndex.value = index
   const step = workflow.steps[index]
   const containerRect = canvasContainerRef.value?.getBoundingClientRect()
@@ -348,23 +520,19 @@ const handleNodePointerDown = ({ event, index }) => {
   }
 }
 
-// Port Drag Initiation
+// Port Drag Initiation（Multisim 式：拖出端口进入多点绘制模式）
 const handlePortPointerDown = ({ event, stepIndex, portType }) => {
-  const step = workflow.steps[stepIndex]
-  // 与正式连线一致：从输出端口圆点中心起笔
-  const portKind = portType === 'else' || portType === 'fail' ? 'false' : 'true'
-
-  isWiring.value = true
-  wiringData.sourceIndex = stepIndex
-  wiringData.portType = portType
-  wiringData.startX = outputPortX(step)
-  wiringData.startY = outputPortY(step, getNodeHeightAt(stepIndex), portKind)
-  wiringData.currentX = wiringData.startX
-  wiringData.currentY = wiringData.startY
+  if (isWiring.value) return
+  closeEdgeMenu()
+  startWiring({ stepIndex, portType })
 }
 
-const handleClearCanvas = async () => {
-  const confirmed = await confirm({
+// 连线绘制模式下点击节点不改变选中状态
+const selectStepGuarded = (index) => {
+  if (!isWiring.value) selectStep(index)
+}
+
+const handleClearCanvas = async () => {  const confirmed = await confirm({
     title: '清空画布',
     message: '确定要清空画布中的所有步骤吗？此操作无法撤销。',
     confirmText: '清空',
@@ -380,7 +548,23 @@ const handleKeyDown = (e) => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
     return
   }
+  if (e.key === 'Escape') {
+    if (isWiring.value) {
+      cancelWiring()
+      return
+    }
+    if (edgeMenu.visible) {
+      closeEdgeMenu()
+      return
+    }
+    selectedEdgeId.value = null
+    return
+  }
   if (e.key === 'Delete' || e.key === 'Backspace') {
+    if (isWiring.value) {
+      cancelWiring()
+      return
+    }
     if (selectedEdgeId.value) {
       const edge = connections.value.find(c => c.id === selectedEdgeId.value)
       if (edge) {
@@ -401,9 +585,11 @@ onMounted(() => {
   window.addEventListener('pointermove', handleGlobalPointerMove)
   window.addEventListener('pointerup', handleGlobalPointerUp)
   window.addEventListener('keydown', handleKeyDown)
-  // Ensure existing steps have default positions
+  // Ensure existing steps have default positions, and snap legacy
+  // free-form coordinates onto the grid so ports/edges stay aligned
   if (workflow.steps && workflow.steps.length > 0) {
-    let needsLayout = workflow.steps.some(s => s.node_x === undefined || s.node_y === undefined)
+    const needsLayout = workflow.steps.some(s => s.node_x === undefined || s.node_y === undefined)
+    normalizeStepPositions()
     if (needsLayout) {
       autoLayoutNodes()
     }
@@ -424,13 +610,14 @@ onUnmounted(() => {
     class="workflow-canvas-container"
     @pointerdown="handleCanvasPointerDown"
     @wheel="handleWheel"
+    @contextmenu="handleCanvasContextMenu"
   >
     <!-- Background Grid Pattern -->
     <div
       class="canvas-grid-bg"
       :style="{
         backgroundPosition: `${panX}px ${panY}px`,
-        backgroundSize: `${24 * scale}px ${24 * scale}px`,
+        backgroundSize: `${GRID_SIZE * scale}px ${GRID_SIZE * scale}px`,
       }"
     ></div>
 
@@ -446,13 +633,14 @@ onUnmounted(() => {
       <CanvasEdges
         :connections="connections"
         :selected-edge-id="selectedEdgeId"
-        :dragging-edge="draggingEdgeData"
         :preview-path="livePreviewPath"
         :preview-port-type="wiringData.portType"
         @select="handleEdgeClick"
-        @reset-waypoint="handleEdgeDoubleClick"
+        @reset-route="handleEdgeDoubleClick"
         @disconnect="disconnectBranch($event.fromIndex, $event.type)"
-        @handle-pointerdown="handleEdgeHandlePointerDown"
+        @context-menu="handleEdgeContextMenu"
+        @segment-pointerdown="handleEdgeSegmentPointerDown"
+        @vertex-pointerdown="handleEdgeVertexPointerDown"
       />
 
       <!-- Nodes Layer -->
@@ -464,13 +652,19 @@ onUnmounted(() => {
         :is-selected="idx === selectedStepIndex"
         :is-active="idx === activeStepIndex"
         :status="stepStatuses[idx]"
-        @select="selectStep"
+        :port-center-dy="nodePortCenterDy(idx)"
+        @select="selectStepGuarded"
         @node-pointerdown="handleNodePointerDown"
         @port-pointerdown="handlePortPointerDown"
         @delete="deleteStep"
         @duplicate="duplicateStep"
         @test="testSingleStep"
       />
+    </div>
+
+    <!-- Wiring Mode Hint -->
+    <div v-if="isWiring" class="canvas-context-hint">
+      单击网格点添加转折 · 点击节点左侧输入端口完成连线 · 右键 / Esc 取消
     </div>
 
     <!-- Empty Canvas Onboarding Guide -->
@@ -483,17 +677,26 @@ onUnmounted(() => {
     <!-- Floating Canvas Controls Toolbar -->
     <CanvasToolbar
       :scale="scale"
-      :edge-style="edgeStyle"
       :has-steps="workflow.steps.length > 0"
       @zoom-in="zoomIn"
       @zoom-out="zoomOut"
       @reset-zoom="resetZoom"
       @fit-view="fitView"
-      @toggle-style="edgeStyle = edgeStyle === 'orthogonal' ? 'bezier' : 'orthogonal'"
       @auto-layout="autoLayoutNodes"
       @clear="handleClearCanvas"
     />
   </div>
+
+  <!-- Edge Right-Click Context Menu（Teleport 到 body，不参与画布变换） -->
+  <EdgeContextMenu
+    :visible="edgeMenu.visible"
+    :x="edgeMenu.x"
+    :y="edgeMenu.y"
+    :has-custom-route="!!edgeMenu.conn?.hasCustomRoute"
+    @close="closeEdgeMenu"
+    @delete="handleMenuDelete"
+    @reset="handleMenuReset"
+  />
 </template>
 
 <style scoped>
@@ -535,5 +738,24 @@ onUnmounted(() => {
 
 .canvas-transform-layer > * {
   pointer-events: auto;
+}
+
+/* Wiring Mode Hint */
+.canvas-context-hint {
+  position: absolute;
+  top: var(--space-3);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: var(--space-1) var(--space-3);
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+  z-index: var(--z-toolbar);
+  white-space: nowrap;
 }
 </style>

@@ -18,7 +18,6 @@ export const workflow = reactive({
 
 const filePath = ref(null)
 const selectedStepIndex = ref(-1)
-export const edgeStyle = ref('orthogonal') // 'orthogonal' | 'bezier'
 
 export function useWorkflowStore() {
   const { getApi } = usePyWebView()
@@ -66,7 +65,6 @@ export function useWorkflowStore() {
     fileName,
     selectedStepIndex,
     selectedStep,
-    edgeStyle,
     selectStep,
     syncWorkflow,
   }

@@ -2,6 +2,7 @@ import { usePyWebView } from '../usePyWebView'
 import { useToast } from '../useToast'
 import { useExecution } from '../useExecution'
 import { useWorkflowStore } from './workflowStore'
+import { useStepCrud } from './useStepCrud'
 
 /**
  * useWorkflowIO.js
@@ -12,6 +13,13 @@ export function useWorkflowIO() {
   const { showToast } = useToast()
   const { resetStepStatuses } = useExecution()
   const { workflow, filePath, selectedStepIndex } = useWorkflowStore()
+  const { normalizeStepPositions } = useStepCrud()
+
+  // 载入外部数据后统一把节点坐标对齐到画布网格
+  const adoptWorkflow = (data) => {
+    Object.assign(workflow, data)
+    normalizeStepPositions()
+  }
 
   const newWorkflow = async () => {
     const api = getApi()
@@ -19,7 +27,7 @@ export function useWorkflowIO() {
     try {
       const res = await api.new_workflow()
       if (res && res.success) {
-        Object.assign(workflow, res.workflow)
+        adoptWorkflow(res.workflow)
         filePath.value = null
         selectedStepIndex.value = -1
         resetStepStatuses()
@@ -36,7 +44,7 @@ export function useWorkflowIO() {
     try {
       const res = await api.open_workflow()
       if (res && res.success) {
-        Object.assign(workflow, res.workflow)
+        adoptWorkflow(res.workflow)
         filePath.value = res.filePath
         selectedStepIndex.value = workflow.steps.length > 0 ? 0 : -1
         resetStepStatuses()
@@ -71,7 +79,7 @@ export function useWorkflowIO() {
     try {
       const res = await api.load_sample_template('basic')
       if (res && res.success) {
-        Object.assign(workflow, res.workflow)
+        adoptWorkflow(res.workflow)
         filePath.value = null
         selectedStepIndex.value = 0
         resetStepStatuses()

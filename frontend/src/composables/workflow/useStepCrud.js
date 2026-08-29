@@ -4,6 +4,8 @@ import { useExecution } from '../useExecution'
 import { useWorkflowStore } from './workflowStore'
 import { calculateSmartNodePosition, createStep } from './stepFactory'
 import { isImageActionType } from '../../utils/actionCatalog'
+import { snapToGrid } from '../../utils/edgeRouting'
+import { NODE_FALLBACK_X, NODE_FALLBACK_Y } from '../../utils/canvasPorts'
 
 /**
  * useStepCrud.js
@@ -26,12 +28,21 @@ export function useStepCrud() {
     }
   }
 
+  // 节点拖拽落点吸附到画布网格，保证端口与连线端点始终落在网格点上
   const updateStepPosition = (index, x, y) => {
     if (index >= 0 && index < workflow.steps.length) {
-      workflow.steps[index].node_x = Math.round(x)
-      workflow.steps[index].node_y = Math.round(y)
+      workflow.steps[index].node_x = snapToGrid(x)
+      workflow.steps[index].node_y = snapToGrid(y)
       syncWorkflow()
     }
+  }
+
+  // 将所有节点坐标对齐到网格（打开旧文件 / 载入模板后调用）
+  const normalizeStepPositions = () => {
+    workflow.steps.forEach((step) => {
+      step.node_x = snapToGrid(step.node_x ?? NODE_FALLBACK_X)
+      step.node_y = snapToGrid(step.node_y ?? NODE_FALLBACK_Y)
+    })
   }
 
   const autoLayoutNodes = () => {
@@ -123,25 +134,34 @@ export function useStepCrud() {
     syncWorkflow()
   }
 
-  const updateEdgeCustomWaypoint = (sourceIndex, portType, waypoint) => {
+  /**
+   * 保存用户自绘/拖拽调整后的连线正交路径（仅转折点，网格吸附）。
+   * @param {number} sourceIndex 源步骤下标
+   * @param {string} portType 端口类型（next/fail/then/else）
+   * @param {Array<{x:number,y:number}>} points 完整路径点（首末为端口点，存储时剔除）
+   */
+  const setEdgeCustomRoute = (sourceIndex, portType, points) => {
     if (sourceIndex < 0 || sourceIndex >= workflow.steps.length) return
     const step = workflow.steps[sourceIndex]
     if (!step.metadata) step.metadata = {}
     if (!step.metadata.custom_routes) step.metadata.custom_routes = {}
-    step.metadata.custom_routes[portType] = {
-      x: Math.round(waypoint.x),
-      y: Math.round(waypoint.y),
+    const mids = (points || []).map(p => ({ x: snapToGrid(p.x), y: snapToGrid(p.y) }))
+    if (mids.length === 0) {
+      delete step.metadata.custom_routes[portType]
+    } else {
+      step.metadata.custom_routes[portType] = mids
     }
     syncWorkflow()
   }
 
-  const resetEdgeCustomWaypoint = (sourceIndex, portType) => {
+  // 复位连线：清除自定义路径，恢复系统自动计算的正交路由
+  const resetEdgeRoute = (sourceIndex, portType) => {
     if (sourceIndex < 0 || sourceIndex >= workflow.steps.length) return
     const step = workflow.steps[sourceIndex]
     if (step.metadata && step.metadata.custom_routes && step.metadata.custom_routes[portType]) {
       delete step.metadata.custom_routes[portType]
       syncWorkflow()
-      showToast(`已重置连线为自动智能避让`, 'info')
+      showToast('已复位连线为自动路径', 'info')
     }
   }
 
@@ -206,11 +226,12 @@ export function useStepCrud() {
   return {
     quickAddStep,
     updateStepPosition,
+    normalizeStepPositions,
     autoLayoutNodes,
     connectSteps,
     disconnectBranch,
-    updateEdgeCustomWaypoint,
-    resetEdgeCustomWaypoint,
+    setEdgeCustomRoute,
+    resetEdgeRoute,
     updateCurrentStep,
     changeStepActionType,
     setHotkeyString,

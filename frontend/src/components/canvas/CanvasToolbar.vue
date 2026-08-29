@@ -6,21 +6,16 @@ import {
   RotateCcw,
   LayoutGrid,
   Trash2,
-  Route,
-  Waypoints,
 } from 'lucide-vue-next'
 
 /**
  * CanvasToolbar.vue
- * 画布浮动控制条：缩放、自适应、连线样式切换、自动排版与清空画布。
+ * 画布浮动控制条：缩放、自适应、自动排版与清空画布。
+ * （连线统一为网格对齐的正交折线，不再提供曲线样式切换）
  */
 defineProps({
   scale: {
     type: Number,
-    required: true,
-  },
-  edgeStyle: {
-    type: String,
     required: true,
   },
   hasSteps: {
@@ -34,7 +29,6 @@ const emit = defineEmits([
   'zoom-out',
   'reset-zoom',
   'fit-view',
-  'toggle-style',
   'auto-layout',
   'clear',
 ])
@@ -54,20 +48,6 @@ const emit = defineEmits([
     </button>
     <button class="toolbar-btn" title="自适应居中" @click="emit('fit-view')">
       <Maximize2 :size="13" />
-    </button>
-
-    <div class="toolbar-divider"></div>
-
-    <!-- Edge Routing Style Toggle -->
-    <button
-      class="toolbar-btn"
-      :class="{ 'highlight-btn': edgeStyle === 'orthogonal' }"
-      :title="edgeStyle === 'orthogonal' ? '当前：智能圆角折线 (点击切换为平滑曲线)' : '当前：平滑避让曲线 (点击切换为智能圆角折线)'"
-      @click="emit('toggle-style')"
-    >
-      <Route v-if="edgeStyle === 'orthogonal'" :size="13" />
-      <Waypoints v-else :size="13" />
-      <span>{{ edgeStyle === 'orthogonal' ? '智能折线' : '平滑曲线' }}</span>
     </button>
 
     <div class="toolbar-divider"></div>

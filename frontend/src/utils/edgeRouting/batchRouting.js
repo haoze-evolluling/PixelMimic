@@ -3,7 +3,7 @@
  * 批量路由：为画布上的所有连线统一分配路由，
  * 包含绕行侧平衡、通道错位、S 弯错位与标签定位四个阶段。
  */
-import { CHANNEL_SPACING, SPATH_STAGGER, CORRIDOR_OVERLAP_MIN, getNodeBox } from './constants'
+import { CHANNEL_SPACING, SPATH_STAGGER, CORRIDOR_OVERLAP_MIN, getNodeBox, finalizeWaypoints } from './constants'
 import { computeBaseRoute, buildBypassWaypoints } from './baseRoute'
 import { measureTextWidth, findLabelPlacement, longestSegmentCenter } from './labels'
 
@@ -48,7 +48,7 @@ function enterXFloor(steps, spec, enterX, y2, corridorY) {
  *
  * @param {Array} steps 所有节点（用于障碍检测）
  * @param {Array} specs 连线定义列表
- *   { key, fromIndex, toIndex, from:{x,y}, to:{x,y}, customWaypoint, labelText, fontSize }
+ *   { key, fromIndex, toIndex, from:{x,y}, to:{x,y}, customPoints, labelText, fontSize }
  * @returns {Map} key -> { waypoints, labelAnchor:{x,y}, labelWidth, labelHeight }
  */
 export function routeAllEdges(steps, specs, options = {}) {
@@ -161,6 +161,11 @@ export function routeAllEdges(steps, specs, options = {}) {
         { x: r.x2, y: r.y2 },
       ]
     })
+  })
+
+  // ---- Pass 3.5: 网格对齐：所有转折点吸附到画布网格，并清理退化段 ----
+  infos.forEach(r => {
+    if (r.waypoints) r.waypoints = finalizeWaypoints(r.waypoints)
   })
 
   // ---- Pass 4: 标签智能定位（避开节点 / 其他连线 / 已放置标签） ----

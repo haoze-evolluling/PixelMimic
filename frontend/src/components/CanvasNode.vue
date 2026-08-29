@@ -24,6 +24,14 @@ const props = defineProps({
     type: Object,
     default: null,
   },
+  /**
+   * 端口组锚定 y 相对节点顶部的偏移（px，已按画布网格吸附）。
+   * 输入端口在锚点处，True/False 输出端口在锚点 ∓/± 20。
+   */
+  portCenterDy: {
+    type: Number,
+    default: 60,
+  },
 })
 
 const emit = defineEmits([
@@ -87,6 +95,7 @@ const handlePortPointerDown = (e, portType) => {
     <div
       class="port-socket port-input"
       :data-step-index="index"
+      :style="{ top: `${portCenterDy}px` }"
       title="输入端口：接收前序执行信号"
     >
       <div class="port-dot"></div>
@@ -188,6 +197,7 @@ const handlePortPointerDown = (e, portType) => {
       <div
         class="port-socket port-output port-true"
         :data-step-index="index"
+        :style="{ top: `${portCenterDy - 20}px` }"
         title="成立分支 (True)：拖拽连线至条件成立时跳转的步骤"
         @pointerdown="handlePortPointerDown($event, 'then')"
       >
@@ -198,6 +208,7 @@ const handlePortPointerDown = (e, portType) => {
       <div
         class="port-socket port-output port-false"
         :data-step-index="index"
+        :style="{ top: `${portCenterDy + 20}px` }"
         title="不成立分支 (False)：拖拽连线至条件不成立时跳转的步骤"
         @pointerdown="handlePortPointerDown($event, 'else')"
       >
@@ -211,6 +222,7 @@ const handlePortPointerDown = (e, portType) => {
       <div
         class="port-socket port-output port-true"
         :data-step-index="index"
+        :style="{ top: `${portCenterDy - 20}px` }"
         title="成功出口 (True)：拖拽连线至执行成功后要执行的步骤"
         @pointerdown="handlePortPointerDown($event, 'next')"
       >
@@ -221,6 +233,7 @@ const handlePortPointerDown = (e, portType) => {
       <div
         class="port-socket port-output port-false"
         :data-step-index="index"
+        :style="{ top: `${portCenterDy + 20}px` }"
         title="失败出口 (False)：拖拽连线至执行失败后要执行的步骤"
         @pointerdown="handlePortPointerDown($event, 'fail')"
       >
@@ -454,30 +467,27 @@ const handlePortPointerDown = (e, portType) => {
   cursor: crosshair;
 }
 
+/* 端口 top 由 portCenterDy prop（网格吸附）内联指定，与连线端点坐标计算保持一致 */
 .port-input {
   left: -8px;
-  top: 50%;
   transform: translateY(-50%);
 }
 
 .port-output.port-next {
-  right: -8px;
-  top: 50%;
+  right: -6px;
   transform: translateY(-50%);
   flex-direction: row;
 }
 
-/* 输出端口统一锚定在节点垂直中心 ±16px，与 WorkflowCanvas 的连线端点坐标计算保持一致 */
+/* 输出端口统一锚定在节点垂直锚点 ∓/± 20px；圆点与节点右缘相切（中心恰在网格点上） */
 .port-output.port-true {
-  right: -8px;
-  top: calc(50% - 16px);
+  right: -6px;
   transform: translateY(-50%);
   flex-direction: row;
 }
 
 .port-output.port-false {
-  right: -8px;
-  top: calc(50% + 16px);
+  right: -6px;
   transform: translateY(-50%);
   flex-direction: row;
 }

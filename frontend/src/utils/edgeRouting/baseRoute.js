@@ -1,6 +1,6 @@
 /**
  * baseRoute.js
- * 单条连线的基础路由：绕行模板 + S 弯 + 自环 + 自定义途经点
+ * 单条连线的基础路由：绕行模板 + S 弯 + 自环 + 用户自绘多点路径
  * （不考虑与其他连线的通道错位，批量错位见 batchRouting.js）
  */
 import { getNodeBox, getNodeHeight } from './constants'
@@ -55,21 +55,19 @@ export function computeBaseRoute(spec, steps) {
   const start = { x: x1, y: y1 }
   const end = { x: x2, y: y2 }
 
-  // 用户手动拖拽的自定义途经点：按用户意图干净地连线
-  const cp = spec.customWaypoint
-  if (cp && Number.isFinite(cp.x) && Number.isFinite(cp.y)) {
-    if (x2 >= x1 + 60 && Math.abs(cp.x - (x1 + x2) / 2) < 25) {
-      return { kind: 'custom', waypoints: [start, { x: cp.x, y: y1 }, { x: cp.x, y: y2 }, end] }
+  // 用户自绘的正交路径（转折点列表，首末端口点由调用方补齐）：直接采用
+  const cps = spec.customPoints
+  if (Array.isArray(cps) && cps.length > 0) {
+    return {
+      kind: 'custom',
+      waypoints: [start, ...cps.map(p => ({ x: p.x, y: p.y })), end],
     }
-    const midX1 = Math.max(x1 + 25, Math.min(cp.x - 20, (x1 + cp.x) / 2))
-    const midX2 = Math.min(x2 - 25, Math.max(cp.x + 20, (x2 + cp.x) / 2))
-    return { kind: 'custom', waypoints: [start, { x: midX1, y: y1 }, { x: cp.x, y: cp.y }, { x: midX2, y: y2 }, end] }
   }
 
   // 自环连线（跳回自身）：端口在节点中心上方走上方小环（True 口），下方走下方小环（False 口）；
   // 同一节点同一侧的多条自环由 routeAllEdges 的通道错位进一步垂直错开
   const isSelfLoop = spec.fromIndex >= 0 && spec.fromIndex === spec.toIndex
-  if (isSelfLoop && !(cp && Number.isFinite(cp.x) && Number.isFinite(cp.y))) {
+  if (isSelfLoop) {
     const node = steps[spec.fromIndex]
     const nx = node.node_x || 100
     const ny = node.node_y || 160

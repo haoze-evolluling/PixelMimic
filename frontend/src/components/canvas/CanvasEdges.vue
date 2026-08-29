@@ -3,7 +3,8 @@ import { ref } from 'vue'
 
 /**
  * CanvasEdges.vue
- * 连线渲染层：SVG 箭头标记、连线本体、标签胶囊与途经点控制手柄。
+ * 连线渲染层：SVG 箭头标记、正交折线本体、标签胶囊、
+ * 可拖拽的中间线段命中区与转折点手柄（Multisim 电路图风格）。
  * 交互事件全部上抛，由 WorkflowCanvas 统一编排。
  */
 defineProps({
@@ -14,10 +15,6 @@ defineProps({
   selectedEdgeId: {
     type: String,
     default: null,
-  },
-  draggingEdge: {
-    type: Object,
-    required: true,
   },
   previewPath: {
     type: String,
@@ -31,12 +28,35 @@ defineProps({
 
 const emit = defineEmits([
   'select',
-  'reset-waypoint',
+  'reset-route',
   'disconnect',
-  'handle-pointerdown',
+  'context-menu',
+  'segment-pointerdown',
+  'vertex-pointerdown',
 ])
 
 const hoveredEdgeId = ref(null)
+
+// 中间线段（首末两段与端口锚点相连，位置固定，不可拖拽）：
+// v-for i in count 生成下标 1..count，即排除首段(0)与末段(n-2)
+const draggableSegmentCount = (conn) => {
+  const n = conn.waypoints?.length || 0
+  return Math.max(0, n - 3)
+}
+
+const segmentPath = (conn, i) => {
+  const p1 = conn.waypoints[i]
+  const p2 = conn.waypoints[i + 1]
+  return `M ${p1.x} ${p1.y} L ${p2.x} ${p2.y}`
+}
+
+// 中间转折点下标列表（1 .. length-2）
+const vertexIndices = (conn) => {
+  const n = conn.waypoints?.length || 0
+  const list = []
+  for (let i = 1; i < n - 1; i++) list.push(i)
+  return list
+}
 </script>
 
 <template>
@@ -111,7 +131,8 @@ const hoveredEdgeId = ref(null)
         'edge-has-custom': conn.hasCustomRoute,
       }"
       @click="emit('select', conn, $event)"
-      @dblclick="emit('reset-waypoint', conn, $event)"
+      @dblclick="emit('reset-route', conn, $event)"
+      @contextmenu="emit('context-menu', { conn, event: $event })"
       @mouseenter="hoveredEdgeId = conn.id"
       @mouseleave="hoveredEdgeId = null"
     >
@@ -138,6 +159,15 @@ const hoveredEdgeId = ref(null)
         :marker-end="`url(#arrow-${conn.type})`"
       />
 
+      <!-- Draggable Middle Segment Hitboxes（水平段上下拖 / 垂直段左右拖，网格吸附） -->
+      <path
+        v-for="i in draggableSegmentCount(conn)"
+        :key="`seg-${i}`"
+        :d="segmentPath(conn, i)"
+        class="edge-seg-hitbox"
+        @pointerdown.stop="emit('segment-pointerdown', { conn, segIndex: i, event: $event })"
+      />
+
       <!-- Edge Label Pill（已做碰撞避让，点击断开该跳转连线） -->
       <g
         v-if="conn.hasLabel && conn.labelAnchor"
@@ -154,7 +184,7 @@ const hoveredEdgeId = ref(null)
             :y="-(conn.labelHeight || 19) / 2"
             :width="conn.labelWidth || 60"
             :height="conn.labelHeight || 19"
-            :rx="(conn.labelHeight || 19) / 2"
+            :rx="3"
             class="edge-label-pill"
             :style="{ stroke: conn.color }"
           />
@@ -172,39 +202,24 @@ const hoveredEdgeId = ref(null)
         </g>
       </g>
 
-      <!-- Interactive Waypoint Control Drag Handle -->
-      <g
-        v-if="hoveredEdgeId === conn.id || selectedEdgeId === conn.id || conn.hasCustomRoute"
-        :transform="`translate(${conn.labelAnchor.x}, ${conn.labelAnchor.y})`"
-      >
+      <!-- Vertex Handles（中间转折点，悬停/选中时显示，可拖拽、自动吸附网格） -->
+      <g v-if="hoveredEdgeId === conn.id || selectedEdgeId === conn.id">
         <g
-          class="edge-control-handle"
-          :class="{
-            'is-dragging': draggingEdge.isDragging && draggingEdge.sourceIndex === conn.fromIndex && draggingEdge.portType === conn.type,
-            'has-custom': conn.hasCustomRoute
-          }"
-          @pointerdown="emit('handle-pointerdown', { event: $event, conn })"
-          @dblclick.stop="emit('reset-waypoint', conn, $event)"
+          v-for="j in vertexIndices(conn)"
+          :key="`vtx-${j}`"
+          class="edge-vertex-handle"
+          :transform="`translate(${conn.waypoints[j].x}, ${conn.waypoints[j].y})`"
+          @pointerdown.stop="emit('vertex-pointerdown', { conn, vertIndex: j, event: $event })"
         >
-          <circle r="14" class="handle-hitbox" fill="transparent" />
-          <circle
-            r="7"
-            class="handle-outer"
+          <circle r="10" class="vertex-hitbox" fill="transparent" />
+          <rect
+            x="-4"
+            y="-4"
+            width="8"
+            height="8"
+            class="vertex-square"
             :style="{ stroke: conn.color }"
           />
-          <circle
-            r="3.5"
-            class="handle-inner"
-            :style="{ fill: conn.color }"
-          />
-
-          <!-- Tooltip text when hovered -->
-          <g v-if="hoveredEdgeId === conn.id" class="handle-tooltip" transform="translate(0, -18)">
-            <rect x="-44" y="-9" width="88" height="18" rx="4" class="handle-tooltip-box" />
-            <text x="0" y="3" text-anchor="middle" class="handle-tooltip-text" font-size="8.5" font-weight="500">
-              {{ conn.hasCustomRoute ? '拖拽调整 / 双击复位' : '拖动调整连线位置' }}
-            </text>
-          </g>
         </g>
       </g>
     </g>
@@ -262,8 +277,8 @@ const hoveredEdgeId = ref(null)
 .edge-path {
   fill: none;
   stroke-width: 2.2;
-  stroke-linejoin: round;
-  stroke-linecap: round;
+  stroke-linejoin: miter;
+  stroke-linecap: butt;
   transition: stroke-width var(--duration-fast) var(--ease-out),
     filter var(--duration-fast) var(--ease-out);
 }
@@ -297,9 +312,40 @@ const hoveredEdgeId = ref(null)
 .edge-preview {
   fill: none;
   stroke-width: 2.2;
-  stroke-linejoin: round;
-  stroke-linecap: round;
+  stroke-linejoin: miter;
+  stroke-linecap: butt;
   animation: flow-dash 0.6s linear infinite;
+}
+
+.edge-seg-hitbox {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 14;
+  cursor: move;
+}
+
+/* Vertex Handles */
+.edge-vertex-handle {
+  cursor: move;
+}
+
+.vertex-hitbox {
+  cursor: move;
+}
+
+.vertex-square {
+  fill: var(--bg-input);
+  stroke-width: 2;
+  filter: drop-shadow(0 2px 5px rgba(15, 23, 42, 0.5));
+  transition: transform var(--duration-fast) var(--ease-out),
+    filter var(--duration-fast) var(--ease-out);
+  transform-origin: center;
+  transform-box: fill-box;
+}
+
+.edge-vertex-handle:hover .vertex-square {
+  transform: scale(1.35);
+  filter: drop-shadow(0 0 8px currentColor);
 }
 
 .edge-label-pill {
@@ -319,60 +365,5 @@ const hoveredEdgeId = ref(null)
 
 .edge-label-group:hover {
   transform: scale(1.12);
-}
-
-/* Edge Control Handle */
-.edge-control-handle {
-  cursor: grab;
-  transition: transform var(--duration-fast) var(--ease-out);
-}
-
-.edge-control-handle:active,
-.edge-control-handle.is-dragging {
-  cursor: grabbing;
-  transform: scale(1.25);
-}
-
-.handle-hitbox {
-  cursor: grab;
-}
-
-.handle-outer {
-  fill: var(--bg-input);
-  stroke-width: 2;
-  transition: transform var(--duration-fast) var(--ease-out),
-    stroke-width var(--duration-fast) var(--ease-out),
-    filter var(--duration-fast) var(--ease-out);
-  filter: drop-shadow(0 2px 5px rgba(15, 23, 42, 0.5));
-}
-
-.edge-control-handle:hover .handle-outer {
-  transform: scale(1.3);
-  stroke-width: 2.5;
-  filter: drop-shadow(0 0 8px currentColor);
-}
-
-.handle-inner {
-  transition: fill var(--duration-fast) var(--ease-out);
-}
-
-.edge-control-handle.has-custom .handle-outer {
-  stroke-dasharray: 2 2;
-}
-
-.handle-tooltip {
-  pointer-events: none;
-  user-select: none;
-  filter: drop-shadow(0 4px 8px rgba(15, 23, 42, 0.45));
-}
-
-.handle-tooltip-box {
-  fill: var(--edge-tooltip-bg);
-  stroke: var(--border-strong);
-  stroke-width: 1;
-}
-
-.handle-tooltip-text {
-  fill: var(--edge-tooltip-text);
 }
 </style>
