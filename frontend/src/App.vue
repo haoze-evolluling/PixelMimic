@@ -14,6 +14,7 @@ import StatusBar from './components/StatusBar.vue'
 import SettingsModal from './components/SettingsModal.vue'
 import AboutModal from './components/AboutModal.vue'
 import ToastContainer from './components/ToastContainer.vue'
+import ConfirmDialog from './components/ConfirmDialog.vue'
 
 const { initPyWebView } = usePyWebView()
 const {
@@ -153,6 +154,9 @@ onUnmounted(() => {
 
     <!-- Toast Notifications -->
     <ToastContainer />
+
+    <!-- Global Confirm Dialog -->
+    <ConfirmDialog />
   </div>
 </template>
 

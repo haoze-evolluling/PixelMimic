@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onUnmounted, reactive } from 'vue'
 import { useWorkflow } from '../composables/useWorkflow'
 import { useExecution } from '../composables/useExecution'
+import { useConfirm } from '../composables/useConfirm'
 import CanvasNode from './CanvasNode.vue'
 import {
   calculateSmartWaypoints,
@@ -43,6 +44,7 @@ const {
 } = useWorkflow()
 
 const { stepStatuses, activeStepIndex } = useExecution()
+const { confirm } = useConfirm()
 
 // Canvas Viewport State (Pan & Zoom)
 const scale = ref(1.0)
@@ -434,8 +436,15 @@ const fitView = () => {
   panY.value = (containerRect.height - (maxY - minY) * targetScale) / 2 - minY * targetScale
 }
 
-const handleClearCanvas = () => {
-  if (confirm('确定要清空画布中的所有步骤吗？')) {
+const handleClearCanvas = async () => {
+  const confirmed = await confirm({
+    title: '清空画布',
+    message: '确定要清空画布中的所有步骤吗？此操作无法撤销。',
+    confirmText: '清空',
+    cancelText: '取消',
+    type: 'danger',
+  })
+  if (confirmed) {
     clearAllSteps()
   }
 }
