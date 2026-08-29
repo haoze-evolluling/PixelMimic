@@ -30,6 +30,7 @@ MANIFEST
 # PyInstaller / Build specs
 *.manifest
 *.spec
+!packaging/*.spec
 
 # ==========================================
 # Virtual Environments
@@ -97,6 +98,10 @@ temp/
 
 # Session autosave cache (runtime user data)
 cache/
+
+# Packaging build artifacts
+.venv-build/
+packaging/MicrosoftEdgeWebview2Setup.exe
 
 # ==========================================
 # Operating System Files

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 import threading
 import time
 from typing import Any, Dict, Optional
@@ -19,6 +20,11 @@ def _default_cache_dir() -> str:
     override = os.environ.get("PIXELMIMIC_CACHE_DIR")
     if override:
         return override
+    if getattr(sys, "frozen", False):
+        # 安装到 Program Files 后项目根不可写，缓存改写用户目录
+        appdata = os.environ.get("APPDATA")
+        if appdata:
+            return os.path.join(appdata, "PixelMimic", "cache")
     # pixelmimic/utils/session_cache.py -> project root
     root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     return os.path.join(root, "cache")

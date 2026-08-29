@@ -6,8 +6,14 @@ from __future__ import annotations
 import os
 import sys
 
+# PyInstaller (onedir) 解包根目录；源码运行时为项目根
+if getattr(sys, "frozen", False):
+    _APP_ROOT = sys._MEIPASS
+else:
+    _APP_ROOT = os.path.dirname(os.path.abspath(__file__))
+
 # Ensure project root is in sys.path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, _APP_ROOT)
 
 import webview
 from pixelmimic.gui.api import PyWebViewApi
@@ -23,7 +29,7 @@ def main():
 
     # Direct path to modern Vue 3 webview distribution
     dist_html_path = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "pixelmimic", "gui", "web", "dist", "index.html")
+        os.path.join(_APP_ROOT, "pixelmimic", "gui", "web", "dist", "index.html")
     )
 
     # Create PyWebView native window
