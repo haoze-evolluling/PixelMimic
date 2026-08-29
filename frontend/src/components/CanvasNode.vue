@@ -519,15 +519,18 @@ const handlePortPointerDown = (e, portType) => {
   flex-direction: row;
 }
 
+/* 输出端口统一锚定在节点垂直中心 ±16px，与 WorkflowCanvas 的连线端点坐标计算保持一致 */
 .port-output.port-true {
   right: -8px;
-  top: 26px;
+  top: calc(50% - 16px);
+  transform: translateY(-50%);
   flex-direction: row;
 }
 
 .port-output.port-false {
   right: -8px;
-  bottom: 12px;
+  top: calc(50% + 16px);
+  transform: translateY(-50%);
   flex-direction: row;
 }
 

@@ -135,3 +135,7 @@ $RECYCLE.BIN/
 *.sublime-workspace
 *.swp
 *.swo
+
+# ==========================================
+# Other
+.workbuddy

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted, reactive } from 'vue'
+import { ref, computed, onMounted, onUnmounted, reactive, watch, nextTick } from 'vue'
 import { useWorkflow } from '../composables/useWorkflow'
 import { useExecution } from '../composables/useExecution'
 import { useConfirm } from '../composables/useConfirm'
@@ -9,6 +9,8 @@ import {
   generateRoundedOrthogonalPath,
   generateSmoothBezierPath,
   routeAllEdges,
+  NODE_WIDTH,
+  NODE_DEFAULT_HEIGHT,
 } from '../utils/edgeRouting'
 import {
   ZoomIn,
@@ -80,6 +82,55 @@ const draggingEdgeData = reactive({
 
 const canvasContainerRef = ref(null)
 
+// ---- 端口坐标契约（必须与 CanvasNode.vue 的端口 CSS 保持一致）----
+// 输出圆点中心 x = node_x + NODE_WIDTH + 2（dot 12px，right: -8px）
+// 输入圆点中心 x = node_x - 2；连线终点在其左侧留 8px 给箭头尖端
+// True/False 输出圆点中心 y = 节点垂直中心 ∓/± 16（与 CanvasNode.vue 的端口 CSS 保持一致）
+const PORT_OUTPUT_DX = NODE_WIDTH + 2
+const PORT_TRUE_DY = -16
+const PORT_FALSE_DY = 16
+const PORT_INPUT_GAP = 8
+
+// 节点实际渲染高度（ResizeObserver 测量），连线端点与路由据此动态对齐端口
+const nodeHeights = reactive({})
+const nodeHeightObserver = ref(null)
+const observedNodeEls = new WeakSet()
+
+const getNodeHeightAt = (idx) => nodeHeights[idx] || NODE_DEFAULT_HEIGHT
+
+const syncNodeHeights = () => {
+  workflow.steps.forEach((_, idx) => {
+    const el = document.getElementById(`canvas-node-${idx}`)
+    if (!el) return
+    if (nodeHeightObserver.value && !observedNodeEls.has(el)) {
+      nodeHeightObserver.value.observe(el)
+      observedNodeEls.add(el)
+    }
+    const h = el.offsetHeight
+    if (h > 0 && nodeHeights[idx] !== h) {
+      nodeHeights[idx] = h
+    }
+  })
+}
+
+const outputPortX = (step) => (step.node_x || 100) + PORT_OUTPUT_DX
+const outputPortY = (step, idx, kind) => {
+  const centerY = (step.node_y || 160) + getNodeHeightAt(idx) / 2
+  return kind === 'false' ? centerY + PORT_FALSE_DY : centerY + PORT_TRUE_DY
+}
+const inputPortY = (step, idx) => (step.node_y || 160) + getNodeHeightAt(idx) / 2
+
+// 携带实际高度的步骤快照，供路由算法做障碍避让（避免默认高度与实际不符）
+const stepsForRouting = computed(() =>
+  workflow.steps.map((s, idx) => ({ ...s, node_h: getNodeHeightAt(idx) }))
+)
+
+// 步骤增删/重排后重新测量节点高度
+watch(
+  () => workflow.steps.map(s => s.id || '').join('|'),
+  () => nextTick(syncNodeHeights)
+)
+
 // Calculate all active connections (Edges) with Smart Obstacle Avoidance
 const connections = computed(() => {
   const list = []
@@ -93,19 +144,18 @@ const connections = computed(() => {
   }
 
   workflow.steps.forEach((step, idx) => {
-    const fromX = (step.node_x || 100) + 230
-    const fromYBase = (step.node_y || 160)
+    const fromX = outputPortX(step)
     const isCondition = step.action_type === 'condition'
 
     const branches = isCondition
       ? [
-          { type: 'then', color: 'var(--color-success)', label: 'True 成立', fromY: fromYBase + 26, action: step.then_action || 'continue', jumpStep: step.then_jump_step },
-          { type: 'else', color: 'var(--color-warning)', label: 'False 不成立', fromY: fromYBase + 62, action: step.else_action || 'continue', jumpStep: step.else_jump_step },
+          { type: 'then', portKind: 'true', color: 'var(--color-success)', label: 'True 成立', action: step.then_action || 'continue', jumpStep: step.then_jump_step },
+          { type: 'else', portKind: 'false', color: 'var(--color-warning)', label: 'False 不成立', action: step.else_action || 'continue', jumpStep: step.else_jump_step },
         ]
       : [
           // 标准动作：True=成功出口（未连线时顺序执行下一步），False=失败出口（仅显式连线时生效）
-          { type: 'next', color: 'var(--color-success)', fromY: fromYBase + 26, action: step.next_action || 'continue', jumpStep: step.next_jump_step, sequential: true },
-          { type: 'fail', color: 'var(--color-warning)', fromY: fromYBase + 62, action: step.fail_action || 'default', jumpStep: step.fail_jump_step, sequential: false },
+          { type: 'next', portKind: 'true', color: 'var(--color-success)', action: step.next_action || 'continue', jumpStep: step.next_jump_step, sequential: true },
+          { type: 'fail', portKind: 'false', color: 'var(--color-warning)', action: step.fail_action || 'default', jumpStep: step.fail_jump_step, sequential: false },
         ]
 
     for (const branch of branches) {
@@ -135,9 +185,9 @@ const connections = computed(() => {
         label: labelText || 'Next',
         hasLabel: !!labelText,
         fromX,
-        fromY: branch.fromY,
-        toX: (targetStep.node_x || 100) - 10,
-        toY: (targetStep.node_y || 160) + 40,
+        fromY: outputPortY(step, idx, branch.portKind),
+        toX: (targetStep.node_x || 100) - PORT_INPUT_GAP,
+        toY: inputPortY(targetStep, targetIdx),
         hasCustomRoute: !!step.metadata?.custom_routes?.[branch.type],
         customWaypoint: resolveCustomWaypoint(step, idx, branch.type),
         isActive: activeStepIndex.value === idx || activeStepIndex.value === targetIdx,
@@ -147,7 +197,7 @@ const connections = computed(() => {
 
   // 统一路由：绕行走廊通道错位 + 标签智能定位，避免连线/标签重合
   const routes = routeAllEdges(
-    workflow.steps,
+    stepsForRouting.value,
     list.map(c => ({
       key: c.id,
       fromIndex: c.fromIndex,
@@ -181,7 +231,7 @@ const livePreviewPath = computed(() => {
   const waypoints = calculateSmartWaypoints(
     { x: wiringData.startX, y: wiringData.startY },
     { x: wiringData.currentX, y: wiringData.currentY },
-    workflow.steps,
+    stepsForRouting.value,
     wiringData.sourceIndex,
     -1
   )
@@ -359,10 +409,10 @@ const handleNodePointerDown = ({ event, index }) => {
 // Port Drag Initiation
 const handlePortPointerDown = ({ event, stepIndex, portType }) => {
   const step = workflow.steps[stepIndex]
-  // 与正式连线一致：从输出端口圆点右侧留白处起笔
-  const fromX = (step.node_x || 100) + 230
-  let fromY = (step.node_y || 160) + 26
-  if (portType === 'else' || portType === 'fail') fromY = (step.node_y || 160) + 62
+  // 与正式连线一致：从输出端口圆点中心起笔
+  const portKind = portType === 'else' || portType === 'fail' ? 'false' : 'true'
+  const fromX = outputPortX(step)
+  const fromY = outputPortY(step, stepIndex, portKind)
 
   isWiring.value = true
   wiringData.sourceIndex = stepIndex
@@ -474,6 +524,9 @@ onMounted(() => {
   window.addEventListener('pointermove', handleGlobalPointerMove)
   window.addEventListener('pointerup', handleGlobalPointerUp)
   window.addEventListener('keydown', handleKeyDown)
+  // 跟踪节点实际高度，保证连线端点始终吸附在端口圆点上
+  nodeHeightObserver.value = new ResizeObserver(() => syncNodeHeights())
+  nextTick(syncNodeHeights)
   // Ensure existing steps have default positions
   if (workflow.steps && workflow.steps.length > 0) {
     let needsLayout = workflow.steps.some(s => s.node_x === undefined || s.node_y === undefined)
@@ -488,6 +541,10 @@ onUnmounted(() => {
   window.removeEventListener('pointermove', handleGlobalPointerMove)
   window.removeEventListener('pointerup', handleGlobalPointerUp)
   window.removeEventListener('keydown', handleKeyDown)
+  if (nodeHeightObserver.value) {
+    nodeHeightObserver.value.disconnect()
+    nodeHeightObserver.value = null
+  }
 })
 </script>
 

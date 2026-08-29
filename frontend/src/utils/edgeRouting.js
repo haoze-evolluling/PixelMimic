@@ -12,6 +12,14 @@
 export const NODE_WIDTH = 220
 export const NODE_DEFAULT_HEIGHT = 120
 
+/**
+ * 节点实际渲染高度（由 WorkflowCanvas 通过 ResizeObserver 写入 step.node_h，
+ * 未测量到时回退默认值）
+ */
+export function getNodeHeight(step) {
+  return step?.node_h || NODE_DEFAULT_HEIGHT
+}
+
 /** 同侧绕行走廊中，相邻通道之间的垂直间距 */
 const CHANNEL_SPACING = 18
 /** 同一对节点之间存在多条 S 弯连线时，弯折点的水平错位间距 */
@@ -25,15 +33,16 @@ const CORRIDOR_OVERLAP_MIN = 24
 export function getNodeBox(step, margin = 20, defaultWidth = NODE_WIDTH, defaultHeight = NODE_DEFAULT_HEIGHT) {
   const x = step.node_x || 100
   const y = step.node_y || 160
+  const h = step?.node_h || defaultHeight
   return {
     left: x - margin,
     right: x + defaultWidth + margin,
     top: y - margin,
-    bottom: y + defaultHeight + margin,
+    bottom: y + h + margin,
     cx: x + defaultWidth / 2,
-    cy: y + defaultHeight / 2,
+    cy: y + h / 2,
     width: defaultWidth + margin * 2,
-    height: defaultHeight + margin * 2,
+    height: h + margin * 2,
   }
 }
 
@@ -196,18 +205,28 @@ function computeBaseRoute(spec, steps) {
     return { kind: 'custom', waypoints: [start, { x: midX1, y: y1 }, { x: cp.x, y: cp.y }, { x: midX2, y: y2 }, end] }
   }
 
-  // 自环连线（跳回自身）：绕过节点上方（成功口）或下方（失败口）的紧凑小环
+  // 自环连线（跳回自身）：端口在节点中心上方走上方小环（True 口），下方走下方小环（False 口）；
+  // 同一节点同一侧的多条自环由 routeAllEdges 的通道错位进一步垂直错开
   const isSelfLoop = spec.fromIndex >= 0 && spec.fromIndex === spec.toIndex
   if (isSelfLoop && !(cp && Number.isFinite(cp.x) && Number.isFinite(cp.y))) {
     const node = steps[spec.fromIndex]
     const nx = node.node_x || 100
     const ny = node.node_y || 160
+    const nodeH = getNodeHeight(node)
+    const goTop = y1 < ny + nodeH / 2
     const loopX1 = x1 + 36
     const loopX2 = x2 - 30
-    const goTop = (y1 - ny) < 50
-    const loopY = goTop ? ny - 44 : ny + NODE_DEFAULT_HEIGHT + 44
+    const loopY = goTop ? ny - 44 : ny + nodeH + 44
     return {
       kind: 'self',
+      side: goTop ? 'top' : 'bottom',
+      loopBaseY: loopY,
+      loopX1,
+      loopX2,
+      x1,
+      y1,
+      x2,
+      y2,
       waypoints: [
         start,
         { x: loopX1, y: y1 },
@@ -325,6 +344,31 @@ export function routeAllEdges(steps, specs, options = {}) {
     if (r.side === 'top') topCount++
     else bottomCount++
     r.corridorBaseY = r.side === 'top' ? r.topBypassY : r.bottomBypassY
+  })
+
+  // ---- Pass 1.5: 自环通道错位：同一节点同一侧的多条自环小环，逐通道垂直错开 ----
+  const selfGroups = new Map()
+  infos.forEach(r => {
+    if (r.kind !== 'self') return
+    const key = `${r.spec.fromIndex}|${r.side}`
+    if (!selfGroups.has(key)) selfGroups.set(key, [])
+    selfGroups.get(key).push(r)
+  })
+  selfGroups.forEach(members => {
+    members.sort((a, b) => (a.spec.key < b.spec.key ? -1 : 1))
+    members.forEach((r, i) => {
+      if (i === 0) return // 第一条保持贴节点的基础位置
+      const offset = i * spacing
+      const loopY = r.side === 'top' ? r.loopBaseY - offset : r.loopBaseY + offset
+      r.waypoints = [
+        { x: r.x1, y: r.y1 },
+        { x: r.loopX1, y: r.y1 },
+        { x: r.loopX1, y: loopY },
+        { x: r.loopX2, y: loopY },
+        { x: r.loopX2, y: r.y2 },
+        { x: r.x2, y: r.y2 },
+      ]
+    })
   })
 
   // ---- Pass 2: 通道错位：同侧且水平范围重叠的绕行连线，按跨度 nesting 分配独立通道 ----
