@@ -234,9 +234,11 @@ class ExecutionEngine:
                 if total_loops > 0 and loop_counter >= total_loops:
                     break
 
-                # Sleep between loops
+                # Sleep between loops（分片睡眠并随时检查停止标记，保证 Stop 立即响应）
                 if self.workflow.loop_interval > 0:
-                    time.sleep(self.workflow.loop_interval)
+                    end_time = time.time() + self.workflow.loop_interval
+                    while time.time() < end_time and not self.context.is_stopped:
+                        time.sleep(min(0.1, max(0.0, end_time - time.time())))
 
             self._set_state(ExecutionState.COMPLETED)
             self._log("SUCCESS", f"=== 工作流【{self.workflow.name}】执行完毕 (完成 {loop_counter} 次循环) ===")

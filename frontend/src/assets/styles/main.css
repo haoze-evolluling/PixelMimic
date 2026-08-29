@@ -48,14 +48,6 @@ input[type='range']:focus-visible {
   outline-offset: 1px;
 }
 
-/* 全局主题过渡：切换主题时表面/文字平滑过渡 */
-.theme-transition *,
-.theme-transition *::before,
-.theme-transition *::after {
-  transition: background-color var(--duration) var(--ease-out),
-    border-color var(--duration) var(--ease-out), color var(--duration) var(--ease-out) !important;
-}
-
 /* 滚动条 */
 ::-webkit-scrollbar {
   width: 6px;
@@ -163,16 +155,6 @@ kbd {
 .btn-secondary:hover:not(:disabled) {
   background: var(--bg-card-hover);
   border-color: var(--border-strong);
-}
-
-/* 幽灵（无边框，用于工具区） */
-.btn-ghost {
-  background: transparent;
-  color: var(--text-secondary);
-}
-.btn-ghost:hover:not(:disabled) {
-  background: var(--glass-hover);
-  color: var(--text-primary);
 }
 
 .btn-icon-only {

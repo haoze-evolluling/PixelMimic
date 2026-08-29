@@ -13,6 +13,15 @@ export function useNodeHeights(workflow) {
 
   const getNodeHeightAt = (idx) => nodeHeights[idx] || NODE_DEFAULT_HEIGHT
 
+  // 读取单个节点的实际高度并按元素 id 中的索引写入缓存
+  const measureEl = (el) => {
+    const h = el.offsetHeight
+    const idx = Number(el.id.replace('canvas-node-', ''))
+    if (!Number.isNaN(idx) && h > 0 && nodeHeights[idx] !== h) {
+      nodeHeights[idx] = h
+    }
+  }
+
   const syncNodeHeights = () => {
     workflow.steps.forEach((_, idx) => {
       const el = document.getElementById(`canvas-node-${idx}`)
@@ -21,10 +30,7 @@ export function useNodeHeights(workflow) {
         nodeHeightObserver.value.observe(el)
         observedNodeEls.add(el)
       }
-      const h = el.offsetHeight
-      if (h > 0 && nodeHeights[idx] !== h) {
-        nodeHeights[idx] = h
-      }
+      measureEl(el)
     })
   }
 
@@ -35,7 +41,10 @@ export function useNodeHeights(workflow) {
   )
 
   onMounted(() => {
-    nodeHeightObserver.value = new ResizeObserver(() => syncNodeHeights())
+    // 回调只测量真正发生尺寸变化的节点，避免单个节点高度变化触发全画布 DOM 回读
+    nodeHeightObserver.value = new ResizeObserver((entries) => {
+      entries.forEach((entry) => measureEl(entry.target))
+    })
     nextTick(syncNodeHeights)
   })
 

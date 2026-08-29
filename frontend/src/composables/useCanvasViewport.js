@@ -11,9 +11,12 @@ export function useCanvasViewport({ steps, connections, containerRef }) {
   const isPanning = ref(false)
   const panStart = reactive({ x: 0, y: 0 })
 
-  // Zoom with Mouse Wheel
-  const handleWheel = (e) => {
-    e.preventDefault()
+  // Zoom with Mouse Wheel（rAF 合帧：高分辨率滚轮事件频率可超 100Hz，
+  // 每次都读 getBoundingClientRect 并写三个响应式值会导致多余的重排/重渲染）
+  let wheelRafId = 0
+  let pendingWheelEvent = null
+
+  const applyWheelZoom = (e) => {
     const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9
     const newScale = Math.min(2.0, Math.max(0.3, scale.value * zoomFactor))
 
@@ -27,6 +30,17 @@ export function useCanvasViewport({ steps, connections, containerRef }) {
     panX.value = mouseX - (mouseX - panX.value) * (newScale / scale.value)
     panY.value = mouseY - (mouseY - panY.value) * (newScale / scale.value)
     scale.value = newScale
+  }
+
+  const handleWheel = (e) => {
+    e.preventDefault()
+    pendingWheelEvent = e
+    if (wheelRafId) return
+    wheelRafId = requestAnimationFrame(() => {
+      wheelRafId = 0
+      if (pendingWheelEvent) applyWheelZoom(pendingWheelEvent)
+      pendingWheelEvent = null
+    })
   }
 
   const zoomIn = () => {

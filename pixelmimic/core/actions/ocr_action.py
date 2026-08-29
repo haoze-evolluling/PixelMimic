@@ -5,7 +5,6 @@ OCR Text recognition action (Extensible Plugin Node).
 from __future__ import annotations
 from pixelmimic.core.actions.base import BaseAction, ExecutionContext
 from pixelmimic.core.models import ActionResult, StepNode
-from pixelmimic.core.mouse_keyboard import InputDriver
 
 
 class OcrClickAction(BaseAction):

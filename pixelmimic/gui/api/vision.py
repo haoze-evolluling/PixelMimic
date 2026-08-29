@@ -12,7 +12,7 @@ import cv2
 from pixelmimic.core.models import StepNode
 from pixelmimic.core.mouse_keyboard import InputDriver
 from pixelmimic.gui.match_highlighter import MatchHighlighter
-from pixelmimic.utils.image_utils import base64_to_cv2
+from pixelmimic.utils.image_utils import base64_to_cv2_cached
 
 
 class VisionMixin:
@@ -33,14 +33,14 @@ class VisionMixin:
             if not step.image_base64:
                 return {"found": False, "message": "步骤中未设置目标图片，请先截取或上传图片"}
 
-            tpl = base64_to_cv2(step.image_base64)
+            tpl = base64_to_cv2_cached(step.image_base64)
             if tpl is None:
                 return {"found": False, "message": "目标图片解析失败"}
 
             method_val = getattr(cv2, step.match_method.value, cv2.TM_CCOEFF_NORMED)
             roi = tuple(step.search_roi) if step.search_roi and len(step.search_roi) == 4 else None
 
-            match = self._matcher.find_match(
+            match = self._engine.matcher.find_match(
                 template=tpl,
                 roi=roi,
                 confidence=step.confidence,

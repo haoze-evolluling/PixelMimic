@@ -62,11 +62,6 @@ const vertexIndices = (conn) => {
 <template>
   <svg class="canvas-svg-layer">
     <defs>
-      <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-        <feGaussianBlur stdDeviation="3" result="blur" />
-        <feComposite in="SourceGraphic" in2="blur" operator="over" />
-      </filter>
-
       <!-- Arrowhead Markers: 尖端锚定在线段终点 (refX=10.5)，userSpaceOnUse 保证悬停加粗时箭头不变形 -->
       <marker
         id="arrow-next"

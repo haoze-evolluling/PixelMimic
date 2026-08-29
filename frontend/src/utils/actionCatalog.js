@@ -82,10 +82,6 @@ export const IMAGE_ACTION_TYPES = ['image_click', 'image_wait', 'image_drag']
 
 export const isImageActionType = (type) => IMAGE_ACTION_TYPES.includes(type)
 
-export function getActionMeta(type) {
-  return ACTION_MAP.get(type) || null
-}
-
 export function getActionLabel(type) {
   return ACTION_MAP.get(type)?.label || '新步骤'
 }

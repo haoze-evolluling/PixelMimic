@@ -9,7 +9,7 @@ from pixelmimic.core.actions.base import BaseAction, ExecutionContext
 from pixelmimic.core.matcher import ImageMatcher, MatchResult
 from pixelmimic.core.models import ActionResult, ClickType, MouseButton, StepNode
 from pixelmimic.core.mouse_keyboard import InputDriver
-from pixelmimic.utils.image_utils import base64_to_cv2
+from pixelmimic.utils.image_utils import base64_to_cv2_cached
 
 
 class ImageActionHelper:
@@ -18,7 +18,7 @@ class ImageActionHelper:
     @staticmethod
     def get_template(step: StepNode) -> cv2.typing.MatLike | None:
         if step.image_base64:
-            return base64_to_cv2(step.image_base64)
+            return base64_to_cv2_cached(step.image_base64)
         elif step.image_path and os.path.exists(step.image_path):
             return cv2.imread(step.image_path, cv2.IMREAD_UNCHANGED)
         return None

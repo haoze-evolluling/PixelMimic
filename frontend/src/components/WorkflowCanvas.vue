@@ -82,9 +82,15 @@ const edgeMenu = reactive({ visible: false, x: 0, y: 0, conn: null })
 // 节点实际渲染高度测量（ResizeObserver），连线端点据此对齐端口
 const { getNodeHeightAt } = useNodeHeights(workflow)
 
-// 携带实际高度的步骤快照，供路由算法做障碍避让（避免默认高度与实际不符）
+// 携带实际高度的步骤快照，供路由算法做障碍避让（避免默认高度与实际不符）。
+// 路由只依赖 node_x/node_y/node_h 三个字段，最小化快照可使
+// Inspector 中编辑名称/备注/截图等无关字段时不触发全量连线重算
 const stepsForRouting = computed(() =>
-  workflow.steps.map((s, idx) => ({ ...s, node_h: getNodeHeightAt(idx) }))
+  workflow.steps.map((s, idx) => ({
+    node_x: s.node_x,
+    node_y: s.node_y,
+    node_h: getNodeHeightAt(idx),
+  }))
 )
 
 // 节点端口组锚定偏移（已按网格吸附），传给 CanvasNode 与连线端点计算保持一致

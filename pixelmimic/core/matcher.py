@@ -4,6 +4,7 @@ Image recognition and screen template matching engine based on OpenCV.
 
 from __future__ import annotations
 from dataclasses import dataclass
+import threading
 import time
 from typing import List, Optional, Tuple
 import cv2
@@ -39,6 +40,8 @@ class ImageMatcher:
 
     def __init__(self):
         self._sct = None
+        # mss 实例非线程安全：引擎线程与 JS 桥线程可能并发截图，须串行化
+        self._capture_lock = threading.Lock()
 
     def _get_sct(self) -> mss.mss:
         if self._sct is None:
@@ -52,16 +55,17 @@ class ImageMatcher:
         Returns OpenCV BGR image (np.ndarray).
         """
         try:
-            sct = self._get_sct()
-            if roi is not None:
-                x, y, w, h = roi
-                monitor = {"left": int(x), "top": int(y), "width": int(w), "height": int(h)}
-            else:
-                # Primary monitor (monitor 1) or all monitors (monitor 0)
-                # Usually monitor 1 is primary monitor
-                monitor = sct.monitors[1] if len(sct.monitors) > 1 else sct.monitors[0]
+            with self._capture_lock:
+                sct = self._get_sct()
+                if roi is not None:
+                    x, y, w, h = roi
+                    monitor = {"left": int(x), "top": int(y), "width": int(w), "height": int(h)}
+                else:
+                    # Primary monitor (monitor 1) or all monitors (monitor 0)
+                    # Usually monitor 1 is primary monitor
+                    monitor = sct.monitors[1] if len(sct.monitors) > 1 else sct.monitors[0]
 
-            sct_img = sct.grab(monitor)
+                sct_img = sct.grab(monitor)
             # mss outputs BGRA, convert to BGR
             img = np.array(sct_img)
             return cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)

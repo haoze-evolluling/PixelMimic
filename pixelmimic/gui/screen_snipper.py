@@ -3,12 +3,10 @@ Fullscreen Screen Snipping and Region Selection Tool with Magnifier & Crosshairs
 """
 
 from __future__ import annotations
-import io
 import threading
-import time
 from typing import Callable, Optional, Tuple
 import tkinter as tk
-from PIL import Image, ImageDraw, ImageTk
+from PIL import Image, ImageTk
 import mss
 
 from pixelmimic.utils.image_utils import pil_to_base64
@@ -30,7 +28,6 @@ class ScreenSnipper:
         callback signature: (base64_str, abs_x, abs_y, width, height)
         """
         self.callback = callback
-        self._result: Optional[Tuple[str, int, int, int, int]] = None
         self._root: Optional[tk.Toplevel | tk.Tk] = None
 
     def start_snip(self, callback: Optional[Callable[[str, int, int, int, int], None]] = None):

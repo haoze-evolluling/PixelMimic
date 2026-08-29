@@ -4,9 +4,7 @@ Temporary screen highlight overlay to flash matched bounding box on screen using
 
 from __future__ import annotations
 import threading
-import time
 import tkinter as tk
-from typing import Optional
 
 
 class MatchHighlighter:

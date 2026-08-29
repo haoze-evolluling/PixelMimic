@@ -8,7 +8,7 @@ import time
 from pixelmimic.core.actions.base import BaseAction, ExecutionContext
 from pixelmimic.core.matcher import ImageMatcher
 from pixelmimic.core.models import ActionResult, StepNode
-from pixelmimic.utils.image_utils import base64_to_cv2
+from pixelmimic.utils.image_utils import base64_to_cv2_cached
 
 
 class WaitTimeAction(BaseAction):
@@ -42,7 +42,7 @@ class ConditionAction(BaseAction):
         confidence = 0.0
 
         if self.step.image_base64:
-            template = base64_to_cv2(self.step.image_base64)
+            template = base64_to_cv2_cached(self.step.image_base64)
             if template is not None:
                 matcher: ImageMatcher = context.matcher or ImageMatcher()
                 roi = tuple(self.step.search_roi) if self.step.search_roi else None
