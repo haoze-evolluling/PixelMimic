@@ -5,6 +5,7 @@ Temporary screen highlight overlay to flash matched bounding box on screen using
 from __future__ import annotations
 import threading
 import tkinter as tk
+import tkinter.font as tkfont
 
 
 class MatchHighlighter:
@@ -24,13 +25,27 @@ class MatchHighlighter:
         try:
             root = tk.Tk()
             root.title("Match Highlight")
+            root.withdraw()  # hide until geometry is finalized
             pad_x = 10
             pad_top = 28
             pad_bot = 10
-            total_w = w + pad_x * 2
+
+            # Compute tag size first so the window can fit it
+            tag_text = f"🎯 匹配成功: {confidence * 100:.1f}%"
+            tag_font = tkfont.Font(family="Segoe UI", size=9, weight="bold")
+            text_w = tag_font.measure(tag_text)
+            tag_h = 24
+            tag_inner_pad = 14
+            tag_w = max(130, text_w + tag_inner_pad * 2)
+
+            total_w = max(w, tag_w) + pad_x * 2
             total_h = h + pad_top + pad_bot
-            win_x = max(0, x - pad_x)
-            win_y = max(0, y - pad_top)
+
+            # Clamp position inside the virtual screen so the tag is not clipped
+            screen_w = root.winfo_screenwidth()
+            screen_h = root.winfo_screenheight()
+            win_x = max(0, min(screen_w - total_w, x - pad_x))
+            win_y = max(0, min(screen_h - total_h, y - pad_top))
 
             root.geometry(f"{total_w}x{total_h}+{win_x}+{win_y}")
             root.overrideredirect(True)
@@ -52,9 +67,15 @@ class MatchHighlighter:
             canvas.pack(fill="both", expand=True)
 
             # Draw tag background & text
-            tag_text = f"🎯 匹配成功: {confidence * 100:.1f}%"
-            canvas.create_rectangle(pad_x, 2, pad_x + 130, 24, fill="#1e293b", outline="#10b981", width=1)
-            canvas.create_text(pad_x + 65, 13, text=tag_text, fill="#34d399", font=("Segoe UI", 9, "bold"))
+            canvas.create_rectangle(
+                pad_x, 2, pad_x + tag_w, 2 + tag_h,
+                fill="#1e293b", outline="#10b981", width=1
+            )
+            canvas.create_text(
+                pad_x + tag_w // 2, 2 + tag_h // 2,
+                text=tag_text, fill="#34d399", font=tag_font,
+                anchor="center"
+            )
 
             # Draw target red/green bounding box
             rx1 = pad_x
@@ -69,7 +90,8 @@ class MatchHighlighter:
             canvas.create_line(cx - 8, cy, cx + 8, cy, fill="#f43f5e", width=2)
             canvas.create_line(cx, cy - 8, cx, cy + 8, fill="#f43f5e", width=2)
 
-            # Auto close after duration
+            # Show the finalized window and auto close after duration
+            root.deiconify()
             root.after(duration_ms, root.destroy)
             root.mainloop()
         except Exception as e:
