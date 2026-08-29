@@ -6,6 +6,8 @@ Exposes new / open / save / save-as / sync / sample-template operations to JS.
 from __future__ import annotations
 
 import os
+import re
+import time
 from typing import Any, Dict, Optional
 
 import webview
@@ -19,10 +21,12 @@ class WorkflowFilesMixin:
     """JS-exposed workflow file lifecycle API (mixin for PyWebViewApi)."""
 
     def new_workflow(self) -> Dict[str, Any]:
-        """Create a fresh workflow."""
+        """Create a fresh workflow, named by creation time by default."""
         self._workflow = Workflow(steps=[])
+        self._workflow.name = time.strftime("%Y-%m-%d %H:%M")
         self._file_path = None
         self._engine.set_workflow(self._workflow)
+        self._persist_session(force=True)
         return {
             "success": True,
             "workflow": self._workflow.to_dict(),
@@ -47,6 +51,7 @@ class WorkflowFilesMixin:
                 self._workflow = wf
                 self._file_path = selected_path
                 self._engine.set_workflow(self._workflow)
+                self._persist_session(force=True)
                 return {
                     "success": True,
                     "workflow": self._workflow.to_dict(),
@@ -71,6 +76,7 @@ class WorkflowFilesMixin:
             success = WorkflowSerializer.save_to_file(self._workflow, target_path)
             if success:
                 self._file_path = target_path
+                self._persist_session(force=True)
                 return {
                     "success": True,
                     "filePath": self._file_path,
@@ -90,7 +96,9 @@ class WorkflowFilesMixin:
             self._workflow = Workflow.from_dict(workflow_data)
             self._engine.set_workflow(self._workflow)
 
-            default_name = f"{self._workflow.name or 'my_workflow'}.pmflow"
+            # Strip Windows-illegal filename chars (e.g. ':' in time-based names)
+            safe_name = re.sub(r'[\\/:*?"<>|]', "-", self._workflow.name or "my_workflow")
+            default_name = f"{safe_name}.pmflow"
             file_types = ("PixelMimic 流程文件 (*.pmflow)", "JSON 文件 (*.json)")
             res = self._window.create_file_dialog(
                 webview.SAVE_DIALOG,
@@ -107,6 +115,7 @@ class WorkflowFilesMixin:
             success = WorkflowSerializer.save_to_file(self._workflow, selected_path)
             if success:
                 self._file_path = selected_path
+                self._persist_session(force=True)
                 return {
                     "success": True,
                     "filePath": self._file_path,
@@ -122,6 +131,7 @@ class WorkflowFilesMixin:
         try:
             self._workflow = Workflow.from_dict(workflow_data)
             self._engine.set_workflow(self._workflow)
+            self._persist_session()
             return {"success": True}
         except Exception as e:
             return {"success": False, "message": str(e)}
@@ -131,6 +141,7 @@ class WorkflowFilesMixin:
         self._workflow = build_sample_workflow()
         self._file_path = None
         self._engine.set_workflow(self._workflow)
+        self._persist_session(force=True)
         return {
             "success": True,
             "workflow": self._workflow.to_dict(),

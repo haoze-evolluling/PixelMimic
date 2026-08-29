@@ -38,6 +38,16 @@ def main():
     )
     api.set_window(window)
 
+    # Flush the editing-session cache right before the window closes so the
+    # next launch restores the last editing state (Word-like resume).
+    def _flush_session_on_close(*_args, **_kwargs):
+        try:
+            api.flush_session()
+        except Exception:
+            pass
+
+    window.events.closing += _flush_session_on_close
+
     # Start application event loop
     webview.start(debug=False)
 

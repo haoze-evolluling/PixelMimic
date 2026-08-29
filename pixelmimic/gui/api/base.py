@@ -24,6 +24,7 @@ from pixelmimic.gui.api.execution import ExecutionMixin
 from pixelmimic.gui.api.vision import VisionMixin
 from pixelmimic.gui.api.workflow_files import WorkflowFilesMixin
 from pixelmimic.gui.screen_snipper import ScreenSnipper
+from pixelmimic.utils.session_cache import SessionCache
 
 
 class PyWebViewApi(WorkflowFilesMixin, ExecutionMixin, VisionMixin):
@@ -46,8 +47,39 @@ class PyWebViewApi(WorkflowFilesMixin, ExecutionMixin, VisionMixin):
             "failsafe": True,
         }
 
+        self._session_cache = SessionCache()
+        self._restored_at: Optional[str] = None
+
         self._setup_engine_listeners()
         self._setup_hotkeys()
+        self._restore_session()
+
+    def _restore_session(self):
+        """Restore the last editing session from disk cache (Word-like reopen)."""
+        data = self._session_cache.load()
+        if not data:
+            return
+        try:
+            self._workflow = Workflow.from_dict(data["workflow"])
+            self._file_path = data.get("file_path")
+            self._engine.set_workflow(self._workflow)
+            self._restored_at = data.get("saved_at")
+            print(f"[Api] Restored last session (autosaved at {self._restored_at})")
+        except Exception as e:
+            print(f"[Api] Failed to restore session: {e}")
+
+    def _persist_session(self, force: bool = False):
+        """Autosave the current editing state to the disk cache (best effort).
+
+        Only persists once the real window is bound, so unit tests and
+        headless usage never touch the user's real session cache.
+        """
+        if not self._window and not force:
+            return
+        try:
+            self._session_cache.save(self._workflow.to_dict(), self._file_path, force=force)
+        except Exception:
+            pass
 
     def set_window(self, window: webview.Window):
         """Bind active PyWebView window."""
@@ -146,12 +178,19 @@ class PyWebViewApi(WorkflowFilesMixin, ExecutionMixin, VisionMixin):
             "settings": self._settings,
             "cursorPos": {"x": cur_x, "y": cur_y},
             "state": self._engine.state.value,
+            "restored": self._restored_at is not None,
+            "restoredAt": self._restored_at,
         }
 
     def save_settings(self, settings_data: Dict[str, Any]) -> Dict[str, Any]:
         """Update global settings."""
         self._settings.update(settings_data)
         return {"success": True, "settings": self._settings}
+
+    def flush_session(self) -> Dict[str, Any]:
+        """Force-write the current editing state to cache (used on window close)."""
+        self._persist_session(force=True)
+        return {"success": True}
 
     def close_window(self):
         self._hotkey_mgr.stop()

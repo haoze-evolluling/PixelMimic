@@ -4,6 +4,7 @@ import { usePyWebView } from './composables/usePyWebView'
 import { useWorkflow } from './composables/useWorkflow'
 import { useExecution } from './composables/useExecution'
 import { useSettings } from './composables/useSettings'
+import { useToast } from './composables/useToast'
 
 import HeaderBar from './components/HeaderBar.vue'
 import ActionPalette from './components/ActionPalette.vue'
@@ -36,6 +37,7 @@ const {
   stopWorkflow,
 } = useExecution()
 const { settings, setSettings } = useSettings()
+const { showToast } = useToast()
 
 const isSettingsOpen = ref(false)
 const isAboutOpen = ref(false)
@@ -101,6 +103,10 @@ onMounted(async () => {
         if (data.settings) setSettings(data.settings)
         if (data.cursorPos) setCursorPos(data.cursorPos.x, data.cursorPos.y)
         if (data.state) setExecutionState(data.state)
+
+        if (data.restored) {
+          showToast(`已恢复上次编辑状态${data.restoredAt ? `（自动保存于 ${data.restoredAt}）` : ''}`, 'info')
+        }
 
         if (workflow.steps && workflow.steps.length > 0) {
           selectStep(0)

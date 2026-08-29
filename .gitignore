@@ -95,6 +95,9 @@ logs/
 tmp/
 temp/
 
+# Session autosave cache (runtime user data)
+cache/
+
 # ==========================================
 # Operating System Files
 # ==========================================
