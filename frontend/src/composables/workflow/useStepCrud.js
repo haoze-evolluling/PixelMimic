@@ -24,7 +24,8 @@ export function useStepCrud() {
     selectStep(workflow.steps.length - 1)
     syncWorkflow()
 
-    if (actionType === 'image_click' || actionType === 'image_wait') {
+    // 依赖目标图片的动作（含条件探查）新建后引导先截图，否则执行时无从识别
+    if (isImageActionType(actionType)) {
       showToast('点击【截取目标】即可框选要识别的目标', 'info')
     }
   }

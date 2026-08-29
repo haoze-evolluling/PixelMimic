@@ -65,7 +65,7 @@ export function injectMockWorkflow() {
       node_y: 160,
     }),
     mk({
-      name: '条件判断 (图像存在/不存在)',
+      name: '条件探查 (图像存在/不存在)',
       action_type: 'condition',
       target_type: 'image',
       condition_type: 'image_not_exists',

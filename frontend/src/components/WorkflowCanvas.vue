@@ -114,6 +114,15 @@ const connections = computed(() => {
     return Array.isArray(stored) && stored.length > 0 ? stored : null
   }
 
+  /**
+   * 普通动作卡片的出口语义是「成功 / 失败」，不是 True / False，
+   * 连线标签同样跟随中文语义；自环连线特化为「重试 / 重复」，一眼能看懂意图。
+   */
+  const buildJumpLabel = (branchType, sourceIdx, targetIdx) => {
+    if (sourceIdx === targetIdx) return branchType === 'fail' ? '失败重试' : '成功后重复'
+    return branchType === 'fail' ? `失败跳至 #${targetIdx + 1}` : `跳至 #${targetIdx + 1}`
+  }
+
   workflow.steps.forEach((step, idx) => {
     const fromX = outputPortX(step)
     const isCondition = step.action_type === 'condition'
@@ -144,7 +153,7 @@ const connections = computed(() => {
       const targetStep = workflow.steps[targetIdx]
       const labelText = isCondition
         ? branch.label
-        : (isJump ? `${branch.type === 'fail' ? 'False' : 'True'} 跳至 #${targetIdx + 1}` : null)
+        : (isJump ? buildJumpLabel(branch.type, idx, targetIdx) : null)
       const customPoints = resolveCustomPoints(idx, branch.type)
 
       list.push({

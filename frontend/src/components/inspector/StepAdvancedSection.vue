@@ -104,7 +104,7 @@ const isAdvancedOpen = ref(false)
           />
         </div>
         <div class="form-group">
-          <label class="form-label">失败策略 (未连 False 口时)</label>
+          <label class="form-label">失败策略（未连「失败」出口时生效）</label>
           <select
             class="form-select"
             :value="selectedStep.on_failure || 'stop'"

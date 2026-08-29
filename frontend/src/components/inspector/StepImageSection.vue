@@ -11,7 +11,7 @@ const { isImageAction, isCondition } = useInspectorStep()
 </script>
 
 <template>
-  <div v-if="isImageAction || isCondition" class="prop-section-card">
+  <div v-if="isImageAction" class="prop-section-card">
     <div class="section-title">
       <Crosshair :size="13" class="section-icon" />
       <span>{{ isCondition ? '条件目标图片识别' : '目标图像配置' }}</span>

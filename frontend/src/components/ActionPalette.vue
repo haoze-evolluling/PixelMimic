@@ -94,7 +94,7 @@ onUnmounted(() => {
                 class="action-item-btn"
                 @click="handleSelectAction(item.type)"
               >
-                <div class="action-item-icon-box" :style="{ color: cat.color }">
+                <div class="action-item-icon-box" :style="{ color: item.color || cat.color }">
                   <component :is="item.icon" :size="14" />
                 </div>
                 <div class="action-item-info">

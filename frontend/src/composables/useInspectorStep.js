@@ -1,5 +1,6 @@
 import { computed, ref } from 'vue'
 import { useWorkflow } from './useWorkflow'
+import { IMAGE_ACTION_TYPES } from '../utils/actionCatalog'
 
 /**
  * useInspectorStep.js
@@ -11,7 +12,8 @@ export function useInspectorStep() {
   const isActionType = (types) =>
     computed(() => (selectedStep.value ? types.includes(selectedStep.value.action_type) : false))
 
-  const isImageAction = isActionType(['image_click', 'image_wait', 'image_drag'])
+  // 复用 actionCatalog 的单一数据源，避免此处再硬编码一份类型清单导致两边漂移
+  const isImageAction = isActionType(IMAGE_ACTION_TYPES)
 
   const isCondition = computed(() => {
     if (!selectedStep.value) return false

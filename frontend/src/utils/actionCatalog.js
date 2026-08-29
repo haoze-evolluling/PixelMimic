@@ -18,6 +18,7 @@ import {
   Command,
   Clock,
   Keyboard,
+  GitBranch,
   Workflow as WorkflowIcon,
 } from 'lucide-vue-next'
 
@@ -64,6 +65,9 @@ export const ACTION_CATEGORIES = [
     color: 'var(--cat-flow)',
     actions: [
       { type: 'wait_time', label: '等待延时', icon: Clock, desc: '暂停执行指定秒数或随机等待时长' },
+      // 条件节点在画布上固定用 --cat-condition（见 CanvasNode 的 categoryColor），
+      // 面板图标色同步覆盖，避免"面板绿色、画布琥珀色"的割裂
+      { type: 'condition', label: '条件探查', icon: GitBranch, color: 'var(--cat-condition)', desc: '判断目标图像在屏幕中是否存在，只探查不操作，再按结果分流' },
     ],
   },
 ]
@@ -77,8 +81,16 @@ const ACTION_MAP = new Map(
   )
 )
 
-/** 以目标图片为前提的动作类型（condition 亦属图像识别，但不开放为可新建类型） */
-export const IMAGE_ACTION_TYPES = ['image_click', 'image_wait', 'image_drag']
+/**
+ * 需要「目标图片 + 模板匹配参数」的动作类型。
+ * condition 虽不是"找图并操作"，但条件判定走的也是同一套模板匹配
+ * （引擎 ConditionAction 读 image_base64 / confidence / use_grayscale / multi_scale），
+ * 因此一并归入。此数组同时决定三件事：
+ *   1. 新建步骤时的 target_type 默认值（image vs coordinate）
+ *   2. 属性面板「目标图像配置」区是否显示
+ *   3. 属性面板高级区中「相似度 / 灰度 / 多尺度」匹配参数是否显示
+ */
+export const IMAGE_ACTION_TYPES = ['image_click', 'image_wait', 'image_drag', 'condition']
 
 export const isImageActionType = (type) => IMAGE_ACTION_TYPES.includes(type)
 

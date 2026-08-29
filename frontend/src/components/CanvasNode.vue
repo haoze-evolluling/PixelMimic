@@ -51,6 +51,15 @@ const emit = defineEmits([
 
 const isCondition = computed(() => props.step.action_type === 'condition')
 
+/**
+ * 端口标签随节点类型切换语义：
+ * - 条件卡片是事前探查，出口为「成立 / 不成立」，沿用 True / False；
+ * - 普通动作卡片是事后判定，出口为「执行成功 / 执行失败」，
+ *   此时再标 True / False 会让用户猜「True 到底是点到了还是没点到」。
+ */
+const truePortLabel = computed(() => (isCondition.value ? 'True' : '成功'))
+const falsePortLabel = computed(() => (isCondition.value ? 'False' : '失败'))
+
 const categoryColor = computed(() => {
   if (isCondition.value) return 'var(--cat-condition)'
   return getActionCategoryColor(props.step.action_type)
@@ -189,7 +198,7 @@ const handlePortPointerDown = (e, portType) => {
         title="成立分支 (True)：拖拽连线至条件成立时跳转的步骤"
         @pointerdown="handlePortPointerDown($event, 'then')"
       >
-        <span class="port-label true-label">True</span>
+        <span class="port-label true-label">{{ truePortLabel }}</span>
         <div class="port-dot true-dot"></div>
       </div>
 
@@ -200,7 +209,7 @@ const handlePortPointerDown = (e, portType) => {
         title="不成立分支 (False)：拖拽连线至条件不成立时跳转的步骤"
         @pointerdown="handlePortPointerDown($event, 'else')"
       >
-        <span class="port-label false-label">False</span>
+        <span class="port-label false-label">{{ falsePortLabel }}</span>
         <div class="port-dot false-dot"></div>
       </div>
     </template>
@@ -211,10 +220,10 @@ const handlePortPointerDown = (e, portType) => {
         class="port-socket port-output port-true"
         :data-step-index="index"
         :style="{ top: `${portTrueDy}px` }"
-        title="成功出口 (True)：拖拽连线至执行成功后要执行的步骤"
+        title="成功出口：拖拽连线至执行成功后要执行的步骤"
         @pointerdown="handlePortPointerDown($event, 'next')"
       >
-        <span class="port-label true-label">True</span>
+        <span class="port-label true-label">{{ truePortLabel }}</span>
         <div class="port-dot true-dot"></div>
       </div>
 
@@ -222,10 +231,10 @@ const handlePortPointerDown = (e, portType) => {
         class="port-socket port-output port-false"
         :data-step-index="index"
         :style="{ top: `${portFalseDy}px` }"
-        title="失败出口 (False)：拖拽连线至执行失败后要执行的步骤"
+        title="失败出口：拖拽连线至执行失败后要执行的步骤（连回本节点即失败自动重试）"
         @pointerdown="handlePortPointerDown($event, 'fail')"
       >
-        <span class="port-label false-label">False</span>
+        <span class="port-label false-label">{{ falsePortLabel }}</span>
         <div class="port-dot false-dot"></div>
       </div>
     </template>
