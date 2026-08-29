@@ -4,7 +4,8 @@ import { useExecution } from '../useExecution'
 import { useWorkflowStore } from './workflowStore'
 import { calculateSmartNodePosition, createStep } from './stepFactory'
 import { isImageActionType } from '../../utils/actionCatalog'
-import { snapToGrid } from '../../utils/edgeRouting'
+import { snapToGrid, NODE_DEFAULT_HEIGHT } from '../../utils/edgeRouting'
+import { computeLayeredLayout } from '../../utils/graphLayout'
 import { NODE_FALLBACK_X, NODE_FALLBACK_Y } from '../../utils/canvasPorts'
 
 /**
@@ -45,22 +46,29 @@ export function useStepCrud() {
     })
   }
 
-  const autoLayoutNodes = () => {
+  // silent: 程序触发的排版（如载入无坐标的模板后自动整理）不弹提示，
+  // 避免与"已载入示例"等业务提示叠在一起
+  const autoLayoutNodes = ({ silent = false } = {}) => {
     if (!workflow.steps || workflow.steps.length === 0) return
 
-    // 统一网格行布局：按步骤顺序从左到右排列，间距为连线走廊和标签留足空间，
-    // 回跳/分支连线由 edgeRouting 的通道错位算法自动分层避让
-    const startX = 80
-    const rowY = 160
-    const spacing = 320 // 节点宽 220 + 100 间隙
-
+    // 图感知分层布局：按连线的拓扑关系分列分行（条件分支上下分叉、
+    // 回跳边由路由通道错位避让），而非简单的单行平铺
+    const layoutSteps = workflow.steps.map((step, idx) => ({
+      height:
+        document.getElementById(`canvas-node-${idx}`)?.offsetHeight ||
+        step.node_h ||
+        NODE_DEFAULT_HEIGHT,
+    }))
+    const positions = computeLayeredLayout(layoutSteps)
     workflow.steps.forEach((step, idx) => {
-      step.node_x = startX + idx * spacing
-      step.node_y = rowY
+      step.node_x = positions[idx].x
+      step.node_y = positions[idx].y
+      // 自定义路由点是绝对坐标，节点移动后必然失效，随布局一并清除
+      if (step.metadata?.custom_routes) delete step.metadata.custom_routes
     })
 
     syncWorkflow()
-    showToast('已完成画布智能排版对齐', 'success')
+    if (!silent) showToast('已按流程连线关系完成自动排版', 'success')
   }
 
   const connectSteps = (sourceIndex, targetIndex, portType = 'next') => {

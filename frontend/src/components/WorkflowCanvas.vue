@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted, reactive } from 'vue'
+import { ref, computed, onMounted, onUnmounted, reactive, nextTick, watch } from 'vue'
 import { useWorkflow } from '../composables/useWorkflow'
 import { useExecution } from '../composables/useExecution'
 import { useConfirm } from '../composables/useConfirm'
@@ -22,7 +22,7 @@ import {
   NODE_WIDTH,
   NODE_DEFAULT_HEIGHT,
 } from '../utils/edgeRouting'
-import { outputPortX, outputPortY, inputPortY, portCenterDy, PORT_INPUT_GAP } from '../utils/canvasPorts'
+import { outputPortX, outputPortY, inputPortY, portCenterDy, portTrueDy, portFalseDy, PORT_INPUT_GAP } from '../utils/canvasPorts'
 
 const {
   workflow,
@@ -89,6 +89,8 @@ const stepsForRouting = computed(() =>
 
 // 节点端口组锚定偏移（已按网格吸附），传给 CanvasNode 与连线端点计算保持一致
 const nodePortCenterDy = (idx) => portCenterDy(getNodeHeightAt(idx))
+const nodePortTrueDy = (idx) => portTrueDy(getNodeHeightAt(idx))
+const nodePortFalseDy = (idx) => portFalseDy(getNodeHeightAt(idx))
 
 // Calculate all active connections (Edges) with Smart Obstacle Avoidance
 const connections = computed(() => {
@@ -202,6 +204,26 @@ const {
   connections,
   containerRef: canvasContainerRef,
 })
+
+// 自动整理后视口自适应居中，让排版结果立即可见
+const runAutoLayout = (silent = false) => {
+  autoLayoutNodes({ silent })
+  nextTick(() => fitView())
+}
+
+const handleAutoLayout = () => runAutoLayout(false)
+
+// 载入外部数据（示例模板 / 打开文件）后，步骤若没有任何有效坐标
+// （后端模板 node_x/node_y 默认全为 0），节点会全部叠在原点、
+// 连线绕成矩形环——自动做一次分层排版并居中显示
+watch(
+  () => workflow.steps,
+  (steps) => {
+    if (steps && steps.length > 0 && steps.every((s) => !s.node_x && !s.node_y)) {
+      runAutoLayout(true)
+    }
+  }
+)
 
 // ---- 坐标换算与命中辅助 ----
 
@@ -592,6 +614,7 @@ onMounted(() => {
     normalizeStepPositions()
     if (needsLayout) {
       autoLayoutNodes()
+      nextTick(() => fitView())
     }
   }
 })
@@ -653,6 +676,8 @@ onUnmounted(() => {
         :is-active="idx === activeStepIndex"
         :status="stepStatuses[idx]"
         :port-center-dy="nodePortCenterDy(idx)"
+        :port-true-dy="nodePortTrueDy(idx)"
+        :port-false-dy="nodePortFalseDy(idx)"
         @select="selectStepGuarded"
         @node-pointerdown="handleNodePointerDown"
         @port-pointerdown="handlePortPointerDown"
@@ -682,7 +707,7 @@ onUnmounted(() => {
       @zoom-out="zoomOut"
       @reset-zoom="resetZoom"
       @fit-view="fitView"
-      @auto-layout="autoLayoutNodes"
+      @auto-layout="handleAutoLayout"
       @clear="handleClearCanvas"
     />
   </div>

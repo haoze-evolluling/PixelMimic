@@ -25,12 +25,20 @@ const props = defineProps({
     default: null,
   },
   /**
-   * 端口组锚定 y 相对节点顶部的偏移（px，已按画布网格吸附）。
-   * 输入端口在锚点处，True/False 输出端口在锚点 ∓/± 20。
+   * 端口 y 相对节点顶部的偏移（px，已按画布网格吸附并按节点高度自适应）：
+   * 输入端口在 portCenterDy，True/False 输出端口分别在 portTrueDy / portFalseDy。
    */
   portCenterDy: {
     type: Number,
     default: 60,
+  },
+  portTrueDy: {
+    type: Number,
+    default: 40,
+  },
+  portFalseDy: {
+    type: Number,
+    default: 80,
   },
 })
 
@@ -197,22 +205,22 @@ const handlePortPointerDown = (e, portType) => {
       <div
         class="port-socket port-output port-true"
         :data-step-index="index"
-        :style="{ top: `${portCenterDy - 20}px` }"
+        :style="{ top: `${portTrueDy}px` }"
         title="成立分支 (True)：拖拽连线至条件成立时跳转的步骤"
         @pointerdown="handlePortPointerDown($event, 'then')"
       >
-        <span class="port-label true-label">True (成立)</span>
+        <span class="port-label true-label">True</span>
         <div class="port-dot true-dot"></div>
       </div>
 
       <div
         class="port-socket port-output port-false"
         :data-step-index="index"
-        :style="{ top: `${portCenterDy + 20}px` }"
+        :style="{ top: `${portFalseDy}px` }"
         title="不成立分支 (False)：拖拽连线至条件不成立时跳转的步骤"
         @pointerdown="handlePortPointerDown($event, 'else')"
       >
-        <span class="port-label false-label">False (不成立)</span>
+        <span class="port-label false-label">False</span>
         <div class="port-dot false-dot"></div>
       </div>
     </template>
@@ -222,7 +230,7 @@ const handlePortPointerDown = (e, portType) => {
       <div
         class="port-socket port-output port-true"
         :data-step-index="index"
-        :style="{ top: `${portCenterDy - 20}px` }"
+        :style="{ top: `${portTrueDy}px` }"
         title="成功出口 (True)：拖拽连线至执行成功后要执行的步骤"
         @pointerdown="handlePortPointerDown($event, 'next')"
       >
@@ -233,7 +241,7 @@ const handlePortPointerDown = (e, portType) => {
       <div
         class="port-socket port-output port-false"
         :data-step-index="index"
-        :style="{ top: `${portCenterDy + 20}px` }"
+        :style="{ top: `${portFalseDy}px` }"
         title="失败出口 (False)：拖拽连线至执行失败后要执行的步骤"
         @pointerdown="handlePortPointerDown($event, 'fail')"
       >
@@ -467,7 +475,7 @@ const handlePortPointerDown = (e, portType) => {
   cursor: crosshair;
 }
 
-/* 端口 top 由 portCenterDy prop（网格吸附）内联指定，与连线端点坐标计算保持一致 */
+/* 端口 top 由 portCenterDy / portTrueDy / portFalseDy prop（网格吸附）内联指定，与连线端点坐标计算保持一致 */
 .port-input {
   left: -8px;
   transform: translateY(-50%);
