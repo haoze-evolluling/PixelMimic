@@ -134,7 +134,7 @@ const connections = computed(() => {
       let targetIdx = -1
       if (isJump) {
         targetIdx = branch.jumpStep - 1
-      } else if (branch.sequential && idx < workflow.steps.length - 1) {
+      } else if (branch.sequential && branch.action !== 'stop' && idx < workflow.steps.length - 1) {
         targetIdx = idx + 1
       }
 

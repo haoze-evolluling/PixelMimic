@@ -145,6 +145,7 @@ class ExecutionEngine:
 
                 # Execute steps using index-driven loop for conditional jumping and skipping
                 idx = 0
+                flow_terminated = False
                 while idx < len(self.workflow.steps):
                     if self.context.is_stopped:
                         break
@@ -227,8 +228,15 @@ class ExecutionEngine:
                             else:
                                 self._log("WARNING", f">> 跳转目标步骤 #{jump_target + 1} 超出范围 (总步数: {len(self.workflow.steps)})，流程结束")
                                 break
+                        elif step_next_action == "stop":
+                            self._log("INFO", f">> 流程终止: 步骤 #{idx + 1} 无后续连线，流程到此结束")
+                            flow_terminated = True
+                            break
                         else:
                             idx += 1
+
+                if flow_terminated:
+                    break
 
                 # Check loop termination
                 if total_loops > 0 and loop_counter >= total_loops:

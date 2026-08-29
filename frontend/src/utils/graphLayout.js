@@ -27,7 +27,7 @@ const jumpTarget = (jumpStep, steps) => {
 
 /**
  * 依据与画布渲染一致的分支语义构建有向边。
- * 条件节点成立/不成立分支显式跳转；标准动作 next 跳转或顺序执行；
+ * 条件节点成立/不成立分支显式跳转；标准动作 next 跳转、顺序执行或终止（stop 不成边）；
  * 失败分支仅在显式 jump 时成边。continue 的条件分支隐式顺序流转，
  * 自环（重复执行自身）不参与布局。
  */
@@ -53,7 +53,7 @@ export function buildFlowEdges(steps) {
     } else {
       if (step.next_action === 'jump') {
         add(i, jumpTarget(step.next_jump_step, steps))
-      } else if (i < steps.length - 1) {
+      } else if (step.next_action !== 'stop' && i < steps.length - 1) {
         add(i, i + 1)
       }
       if (step.fail_action === 'jump') {

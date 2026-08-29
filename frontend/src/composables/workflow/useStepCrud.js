@@ -136,8 +136,10 @@ export function useStepCrud() {
       step.fail_jump_step = null
       showToast(`已重置步骤 #${sourceIndex + 1} 失败分支为默认失败策略`, 'info')
     } else if (portType === 'next') {
-      step.next_action = 'continue'
-      showToast(`已重置步骤 #${sourceIndex + 1} 后续流向为顺序执行`, 'info')
+      // next 端口删除连线 = 流程到此终止（stop 不渲染连线，执行端同步终止）
+      step.next_action = 'stop'
+      step.next_jump_step = null
+      showToast(`已删除连线: 步骤 #${sourceIndex + 1} 执行后终止流程`, 'info')
     }
     syncWorkflow()
   }
