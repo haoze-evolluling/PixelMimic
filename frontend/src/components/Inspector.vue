@@ -207,7 +207,6 @@ const commonHotkeys = [
                 </optgroup>
                 <optgroup label="流程控制">
                   <option value="wait_time">等待延时</option>
-                  <option value="condition">条件判断 (分支)</option>
                 </optgroup>
               </select>
             </div>
@@ -861,7 +860,7 @@ const commonHotkeys = [
                 />
               </div>
               <div class="form-group">
-                <label class="form-label">失败策略</label>
+                <label class="form-label">失败策略 (未连 False 口时)</label>
                 <select
                   class="form-select"
                   :value="selectedStep.on_failure || 'stop'"

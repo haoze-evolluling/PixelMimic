@@ -168,6 +168,17 @@ class ExecutionEngine:
                     self._emit("step_finished", idx, result.success, result.message)
 
                     if not result.success:
+                        # Canvas "False" port takes precedence: jump on failure if wired
+                        fail_action = getattr(step, "fail_action", None)
+                        fail_jump_step = getattr(step, "fail_jump_step", None)
+                        if fail_action == "jump" and fail_jump_step:
+                            fail_target = int(fail_jump_step) - 1
+                            if 0 <= fail_target < len(self.workflow.steps):
+                                self._log("INFO", f">> 失败分支: 步骤 #{idx + 1} 执行失败，跳转到步骤 #{fail_target + 1}")
+                                idx = fail_target
+                                continue
+                            self._log("WARNING", f">> 失败跳转目标步骤 #{fail_target + 1} 无效 (总步数: {len(self.workflow.steps)})，回退到失败策略")
+
                         on_fail = step.on_failure
                         if isinstance(on_fail, str):
                             try:

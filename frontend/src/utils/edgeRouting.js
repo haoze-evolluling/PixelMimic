@@ -196,6 +196,29 @@ function computeBaseRoute(spec, steps) {
     return { kind: 'custom', waypoints: [start, { x: midX1, y: y1 }, { x: cp.x, y: cp.y }, { x: midX2, y: y2 }, end] }
   }
 
+  // 自环连线（跳回自身）：绕过节点上方（成功口）或下方（失败口）的紧凑小环
+  const isSelfLoop = spec.fromIndex >= 0 && spec.fromIndex === spec.toIndex
+  if (isSelfLoop && !(cp && Number.isFinite(cp.x) && Number.isFinite(cp.y))) {
+    const node = steps[spec.fromIndex]
+    const nx = node.node_x || 100
+    const ny = node.node_y || 160
+    const loopX1 = x1 + 36
+    const loopX2 = x2 - 30
+    const goTop = (y1 - ny) < 50
+    const loopY = goTop ? ny - 44 : ny + NODE_DEFAULT_HEIGHT + 44
+    return {
+      kind: 'self',
+      waypoints: [
+        start,
+        { x: loopX1, y: y1 },
+        { x: loopX1, y: loopY },
+        { x: loopX2, y: loopY },
+        { x: loopX2, y: y2 },
+        end,
+      ],
+    }
+  }
+
   const obstacleBoxes = steps
     .filter((_, idx) => idx !== spec.fromIndex && idx !== spec.toIndex)
     .map(s => getNodeBox(s, 18))

@@ -89,7 +89,6 @@ export function useWorkflow() {
       hotkey: '组合快捷键',
       key_press: '单个按键',
       wait_time: '等待延时',
-      condition: '条件判断 (图像存在/不存在)',
     }
 
     const pos = customPos || calculateSmartNodePosition(actionType)
@@ -132,6 +131,8 @@ export function useWorkflow() {
       else_skip_count: 1,
       next_action: 'continue',
       next_jump_step: 1,
+      fail_action: 'default',
+      fail_jump_step: null,
       pre_delay: actionType === 'wait_time' ? 1.0 : 0.0,
       post_delay: 0.2,
       retry_count: 1,
@@ -146,7 +147,7 @@ export function useWorkflow() {
     selectStep(workflow.steps.length - 1)
     syncWorkflow()
 
-    if (actionType === 'image_click' || actionType === 'image_wait' || actionType === 'condition') {
+    if (actionType === 'image_click' || actionType === 'image_wait') {
       showToast('点击【截取目标】即可框选要识别的目标', 'info')
     }
   }
@@ -180,10 +181,10 @@ export function useWorkflow() {
   const connectSteps = (sourceIndex, targetIndex, portType = 'next') => {
     if (sourceIndex < 0 || sourceIndex >= workflow.steps.length) return
     if (targetIndex < 0 || targetIndex >= workflow.steps.length) return
-    if (sourceIndex === targetIndex) return
 
     const sourceStep = workflow.steps[sourceIndex]
     const targetStepNum = targetIndex + 1
+    const isSelfLoop = sourceIndex === targetIndex
 
     if (portType === 'then') {
       sourceStep.then_action = 'jump'
@@ -193,13 +194,22 @@ export function useWorkflow() {
       sourceStep.else_action = 'jump'
       sourceStep.else_jump_step = targetStepNum
       showToast(`已建立分支连线: 不成立时跳转至步骤 #${targetStepNum}`, 'success')
+    } else if (portType === 'fail') {
+      sourceStep.fail_action = 'jump'
+      sourceStep.fail_jump_step = targetStepNum
+      showToast(
+        isSelfLoop
+          ? `已建立自循环连线: 步骤 #${targetStepNum} 失败后重复执行自身`
+          : `已建立失败分支连线: 步骤 #${sourceIndex + 1} 失败时跳转至步骤 #${targetStepNum}`,
+        'success'
+      )
     } else {
       // Default next port (Condition or Standard Action)
       if (sourceStep.action_type === 'condition') {
         sourceStep.then_action = 'jump'
         sourceStep.then_jump_step = targetStepNum
         showToast(`已建立分支连线: 成立时跳转至步骤 #${targetStepNum}`, 'success')
-      } else if (targetIndex === sourceIndex + 1) {
+      } else if (!isSelfLoop && targetIndex === sourceIndex + 1) {
         // Natural sequence
         sourceStep.next_action = 'continue'
         sourceStep.next_jump_step = targetStepNum
@@ -208,7 +218,12 @@ export function useWorkflow() {
         // Custom jump / loop back
         sourceStep.next_action = 'jump'
         sourceStep.next_jump_step = targetStepNum
-        showToast(`已建立跳转连线: 步骤 #${sourceIndex + 1} 执行后跳转至步骤 #${targetStepNum}`, 'success')
+        showToast(
+          isSelfLoop
+            ? `已建立自循环连线: 步骤 #${targetStepNum} 执行成功后重复执行自身`
+            : `已建立跳转连线: 步骤 #${sourceIndex + 1} 执行后跳转至步骤 #${targetStepNum}`,
+          'success'
+        )
       }
     }
     syncWorkflow()
@@ -223,6 +238,10 @@ export function useWorkflow() {
     } else if (portType === 'else') {
       step.else_action = 'continue'
       showToast(`已重置步骤 #${sourceIndex + 1} 不成立分支为继续执行`, 'info')
+    } else if (portType === 'fail') {
+      step.fail_action = 'default'
+      step.fail_jump_step = null
+      showToast(`已重置步骤 #${sourceIndex + 1} 失败分支为默认失败策略`, 'info')
     } else if (portType === 'next') {
       step.next_action = 'continue'
       showToast(`已重置步骤 #${sourceIndex + 1} 后续流向为顺序执行`, 'info')

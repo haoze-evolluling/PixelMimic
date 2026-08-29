@@ -258,16 +258,26 @@ const handlePortPointerDown = (e, portType) => {
       </div>
     </template>
 
-    <!-- For Standard Action: Single Next port -->
+    <!-- For Standard Action: Success / Failure branch ports -->
     <template v-else>
       <div
-        class="port-socket port-output port-next"
+        class="port-socket port-output port-true"
         :data-step-index="index"
-        title="输出端口：拖拽连线至下一步骤"
+        title="成功出口 (True)：拖拽连线至执行成功后要执行的步骤"
         @pointerdown="handlePortPointerDown($event, 'next')"
       >
-        <span class="port-label next-label">Next</span>
-        <div class="port-dot next-dot"></div>
+        <span class="port-label true-label">True</span>
+        <div class="port-dot true-dot"></div>
+      </div>
+
+      <div
+        class="port-socket port-output port-false"
+        :data-step-index="index"
+        title="失败出口 (False)：拖拽连线至执行失败后要执行的步骤"
+        @pointerdown="handlePortPointerDown($event, 'fail')"
+      >
+        <span class="port-label false-label">False</span>
+        <div class="port-dot false-dot"></div>
       </div>
     </template>
   </div>

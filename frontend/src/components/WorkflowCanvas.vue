@@ -103,7 +103,9 @@ const connections = computed(() => {
           { type: 'else', color: '#f59e0b', label: 'False 不成立', fromY: fromYBase + 62, action: step.else_action || 'continue', jumpStep: step.else_jump_step },
         ]
       : [
-          { type: 'next', color: '#38bdf8', label: null, fromY: fromYBase + 40, action: step.next_action || 'continue', jumpStep: step.next_jump_step },
+          // 标准动作：True=成功出口（未连线时顺序执行下一步），False=失败出口（仅显式连线时生效）
+          { type: 'next', color: '#10b981', fromY: fromYBase + 26, action: step.next_action || 'continue', jumpStep: step.next_jump_step, sequential: true },
+          { type: 'fail', color: '#f59e0b', fromY: fromYBase + 62, action: step.fail_action || 'default', jumpStep: step.fail_jump_step, sequential: false },
         ]
 
     for (const branch of branches) {
@@ -111,14 +113,17 @@ const connections = computed(() => {
       let targetIdx = -1
       if (isJump) {
         targetIdx = branch.jumpStep - 1
-      } else if (idx < workflow.steps.length - 1) {
+      } else if (branch.sequential && idx < workflow.steps.length - 1) {
         targetIdx = idx + 1
       }
 
-      if (targetIdx < 0 || targetIdx >= workflow.steps.length || targetIdx === idx) continue
+      // 自环 (targetIdx === idx) 是合法的"重复执行自身"连线，保留
+      if (targetIdx < 0 || targetIdx >= workflow.steps.length) continue
 
       const targetStep = workflow.steps[targetIdx]
-      const labelText = isCondition ? branch.label : (isJump ? `跳至 #${targetIdx + 1}` : null)
+      const labelText = isCondition
+        ? branch.label
+        : (isJump ? `${branch.type === 'fail' ? 'False' : 'True'} 跳至 #${targetIdx + 1}` : null)
 
       list.push({
         id: `conn-${idx}-${branch.type}-${targetIdx}`,
@@ -277,7 +282,8 @@ const handleGlobalPointerUp = (e) => {
     const inputSocket = target?.closest('.port-input')
     if (inputSocket) {
       const targetStepIdx = parseInt(inputSocket.getAttribute('data-step-index'))
-      if (!isNaN(targetStepIdx) && targetStepIdx !== wiringData.sourceIndex) {
+      // 允许 targetStepIdx === sourceIndex：自环连线（重复执行自身）
+      if (!isNaN(targetStepIdx)) {
         connectSteps(wiringData.sourceIndex, targetStepIdx, wiringData.portType)
       }
     }
@@ -355,9 +361,8 @@ const handlePortPointerDown = ({ event, stepIndex, portType }) => {
   const step = workflow.steps[stepIndex]
   // 与正式连线一致：从输出端口圆点右侧留白处起笔
   const fromX = (step.node_x || 100) + 230
-  let fromY = (step.node_y || 160) + 40
-  if (portType === 'then') fromY = (step.node_y || 160) + 26
-  if (portType === 'else') fromY = (step.node_y || 160) + 62
+  let fromY = (step.node_y || 160) + 26
+  if (portType === 'else' || portType === 'fail') fromY = (step.node_y || 160) + 62
 
   isWiring.value = true
   wiringData.sourceIndex = stepIndex
@@ -445,7 +450,7 @@ const handleKeyDown = (e) => {
     if (selectedEdgeId.value) {
       const edge = connections.value.find(c => c.id === selectedEdgeId.value)
       if (edge) {
-        if (edge.type === 'then' || edge.type === 'else') {
+        if (['then', 'else', 'next', 'fail'].includes(edge.type)) {
           disconnectBranch(edge.fromIndex, edge.type)
         }
         selectedEdgeId.value = null
@@ -522,7 +527,7 @@ onUnmounted(() => {
             markerUnits="userSpaceOnUse"
             orient="auto-start-reverse"
           >
-            <path d="M 1 1.8 L 10.8 6 L 1 10.2 L 3.1 6 Z" fill="#38bdf8" />
+            <path d="M 1 1.8 L 10.8 6 L 1 10.2 L 3.1 6 Z" fill="#10b981" />
           </marker>
 
           <marker
@@ -540,6 +545,19 @@ onUnmounted(() => {
 
           <marker
             id="arrow-else"
+            viewBox="0 0 12 12"
+            refX="10.5"
+            refY="6"
+            markerWidth="11"
+            markerHeight="11"
+            markerUnits="userSpaceOnUse"
+            orient="auto-start-reverse"
+          >
+            <path d="M 1 1.8 L 10.8 6 L 1 10.2 L 3.1 6 Z" fill="#f59e0b" />
+          </marker>
+
+          <marker
+            id="arrow-fail"
             viewBox="0 0 12 12"
             refX="10.5"
             refY="6"
@@ -666,7 +684,7 @@ onUnmounted(() => {
           v-if="isWiring"
           :d="livePreviewPath"
           class="edge-preview"
-          :stroke="wiringData.portType === 'then' ? '#10b981' : (wiringData.portType === 'else' ? '#f59e0b' : '#38bdf8')"
+          :stroke="wiringData.portType === 'fail' ? '#f59e0b' : '#10b981'"
           stroke-dasharray="5 5"
         />
       </svg>
